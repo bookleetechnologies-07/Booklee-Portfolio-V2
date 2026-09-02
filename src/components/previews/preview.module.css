@@ -1,0 +1,1037 @@
+/*
+ * Concept website previews.
+ *
+ * Each preview is a real, designed web page rendered as DOM — not a screenshot
+ * and not an image. The frame establishes an inline-size container and the
+ * canvas sets `font-size: 1cqw`, so 1em equals exactly 1% of the preview width.
+ * Every measurement below is therefore in em, and the whole composition scales
+ * from a 1440px project hero down to a 200px thumbnail with no JS, no resize
+ * observer and no blurry bitmap.
+ */
+
+.frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  container-type: inline-size;
+  overflow: hidden;
+  background: #ffffff;
+  color: #17181a;
+  isolation: isolate;
+}
+
+.fill {
+  aspect-ratio: auto;
+  height: 100%;
+}
+
+.canvas {
+  position: absolute;
+  inset: 0;
+  font-size: 1cqw;
+  line-height: 1.35;
+  letter-spacing: 0.005em;
+  display: flex;
+  overflow: hidden;
+  font-family: var(--font-sans);
+}
+
+/* Below this width the preview is decorative rather than readable, so the
+   densest panels step aside and type grows. */
+@container (max-width: 420px) {
+  .canvas {
+    font-size: 1.7cqw;
+  }
+
+  .dense {
+    display: none !important;
+  }
+}
+
+/* --- shared primitives ------------------------------------------------- */
+
+.brandRow {
+  display: flex;
+  align-items: center;
+  gap: 0.55em;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.brandMark {
+  width: 1.5em;
+  height: 1.5em;
+  flex: none;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  border-radius: 999em;
+  padding: 0.28em 0.75em;
+  font-size: 0.82em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.dot {
+  width: 0.45em;
+  height: 0.45em;
+  border-radius: 999em;
+  flex: none;
+}
+
+.bar {
+  height: 0.5em;
+  border-radius: 999em;
+  background: currentColor;
+  opacity: 0.16;
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  border-radius: 999em;
+  font-size: 0.78em;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  flex: none;
+}
+
+.brandline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1em;
+  font-size: 0.85em;
+}
+
+/* ====================================================================== *
+ * 01 — CRM · lilac + graphite
+ * ====================================================================== */
+
+.crm {
+  background: #f4f2f7;
+  color: #1d1d21;
+}
+
+.crmSidebar {
+  width: 15em;
+  flex: none;
+  background: #1b1c20;
+  color: #e7e5ee;
+  padding: 1.5em 1.2em;
+  display: flex;
+  flex-direction: column;
+  gap: 1.6em;
+}
+
+.crmNav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15em;
+}
+
+.crmNavItem {
+  display: flex;
+  align-items: center;
+  gap: 0.7em;
+  padding: 0.5em 0.7em;
+  border-radius: 0.5em;
+  font-size: 0.92em;
+  color: rgb(231 229 238 / 0.66);
+}
+
+.crmNavItemActive {
+  background: rgb(220 204 244 / 0.16);
+  color: #ded0f5;
+}
+
+.crmMain {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.crmTopbar {
+  display: flex;
+  align-items: center;
+  gap: 1em;
+  padding: 1.15em 1.6em;
+  border-bottom: 0.07em solid rgb(29 29 33 / 0.08);
+  background: #fbfafd;
+}
+
+.crmSearch {
+  flex: 1;
+  height: 2.1em;
+  border-radius: 0.5em;
+  background: rgb(29 29 33 / 0.05);
+  display: flex;
+  align-items: center;
+  padding-inline: 0.8em;
+  font-size: 0.86em;
+  color: rgb(29 29 33 / 0.62);
+  max-width: 22em;
+}
+
+.crmButton {
+  height: 2.1em;
+  border-radius: 0.5em;
+  background: #dcccf4;
+  color: #2a2340;
+  display: inline-flex;
+  align-items: center;
+  padding-inline: 0.95em;
+  font-size: 0.86em;
+  font-weight: 600;
+}
+
+.crmBody {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+.crmBoardWrap {
+  flex: 1;
+  padding: 1.4em 1.6em;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+}
+
+.crmHeadingRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1em;
+}
+
+.crmTitle {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 2.1em;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.015em;
+}
+
+.crmBoard {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.7em;
+  flex: 1;
+  min-height: 0;
+}
+
+.crmColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+  min-width: 0;
+}
+
+.crmColumnHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.78em;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgb(29 29 33 / 0.64);
+  padding-bottom: 0.35em;
+  border-bottom: 0.12em solid rgb(29 29 33 / 0.1);
+}
+
+.crmCard {
+  background: #ffffff;
+  border-radius: 0.6em;
+  padding: 0.65em 0.7em;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45em;
+  box-shadow: 0 0.1em 0.35em rgb(29 29 33 / 0.06);
+}
+
+.crmCardName {
+  font-size: 0.86em;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+}
+
+.crmCardMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.78em;
+  color: rgb(29 29 33 / 0.64);
+}
+
+.crmRail {
+  width: 17em;
+  flex: none;
+  border-left: 0.07em solid rgb(29 29 33 / 0.08);
+  padding: 1.4em 1.3em;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1em;
+  background: #fbfafd;
+}
+
+.crmRailTitle {
+  font-size: 0.78em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgb(29 29 33 / 0.64);
+}
+
+.crmChart {
+  height: 5em;
+  display: flex;
+  align-items: flex-end;
+  gap: 0.35em;
+}
+
+.crmChartBar {
+  flex: 1;
+  border-radius: 0.2em 0.2em 0 0;
+  background: #dcccf4;
+}
+
+.crmFeed {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7em;
+}
+
+.crmFeedItem {
+  display: flex;
+  gap: 0.6em;
+  font-size: 0.82em;
+  color: rgb(29 29 33 / 0.68);
+}
+
+/* ====================================================================== *
+ * 02 — HRM · pastel blue
+ * ====================================================================== */
+
+.hrm {
+  background: #f2f6fb;
+  color: #1c2027;
+  flex-direction: column;
+}
+
+.hrmTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5em;
+  padding: 1.1em 1.8em;
+  background: #ffffff;
+  border-bottom: 0.07em solid rgb(28 32 39 / 0.08);
+}
+
+.hrmTabs {
+  display: flex;
+  gap: 1.3em;
+  font-size: 0.88em;
+  color: rgb(28 32 39 / 0.64);
+}
+
+.hrmTabActive {
+  color: #1c2027;
+  font-weight: 600;
+  border-bottom: 0.16em solid #8fbde8;
+  padding-bottom: 0.25em;
+}
+
+.hrmStats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.8em;
+  padding: 1.2em 1.8em 0;
+}
+
+.hrmStat {
+  background: #ffffff;
+  border-radius: 0.7em;
+  padding: 0.8em 0.9em;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25em;
+}
+
+.hrmStatValue {
+  font-family: var(--font-display);
+  font-size: 1.9em;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.hrmStatLabel {
+  font-size: 0.78em;
+  color: rgb(28 32 39 / 0.64);
+}
+
+.hrmBody {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1.35fr 1fr;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 1em;
+  padding: 1.1em 1.8em 1.3em;
+  min-height: 0;
+}
+
+
+.hrmCheck {
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+  font-size: 0.86em;
+  padding: 0.32em 0;
+}
+
+.hrmTick {
+  width: 1.1em;
+  height: 1.1em;
+  border-radius: 0.25em;
+  flex: none;
+  display: grid;
+  place-items: center;
+  font-size: 0.8em;
+  color: #1d3049;
+}
+
+.hrmPanel {
+  background: #ffffff;
+  border-radius: 0.8em;
+  padding: 1em 1.1em;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8em;
+  min-height: 0;
+}
+
+/* Declared after .hrmPanel so its `display: grid` wins the cascade. */
+.hrmWide {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 1.6em;
+  align-content: start;
+}
+
+.hrmPanelTitle {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  font-size: 0.82em;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: rgb(28 32 39 / 0.64);
+}
+
+.hrmWeek {
+  display: grid;
+  grid-template-columns: 10.5em repeat(5, minmax(0, 1fr));
+  gap: 0.3em;
+  align-items: center;
+  font-size: 0.8em;
+}
+
+.hrmWeekHead {
+  color: rgb(28 32 39 / 0.62);
+  text-align: center;
+  font-size: 0.9em;
+  letter-spacing: 0.05em;
+}
+
+.hrmWeekName {
+  display: flex;
+  align-items: center;
+  gap: 0.45em;
+  color: rgb(28 32 39 / 0.75);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.hrmCell {
+  height: 1.85em;
+  border-radius: 0.3em;
+}
+
+.hrmCoverage {
+  display: grid;
+  grid-template-columns: 10.5em repeat(5, minmax(0, 1fr));
+  gap: 0.3em;
+  align-items: end;
+  font-size: 0.8em;
+  margin-top: 0.6em;
+}
+
+.hrmCoverageBar {
+  background: #cfe2f4;
+  border-radius: 0.25em 0.25em 0 0;
+}
+
+.hrmLeave {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55em;
+}
+
+.hrmLeaveRow {
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+  padding: 0.5em 0.6em;
+  border-radius: 0.5em;
+  background: #f2f6fb;
+  font-size: 0.84em;
+}
+
+.hrmApprove {
+  margin-left: auto;
+  display: flex;
+  gap: 0.35em;
+}
+
+.hrmBtnPrimary {
+  border-radius: 0.4em;
+  background: #bfd9f2;
+  color: #1d3049;
+  padding: 0.3em 0.7em;
+  font-size: 0.88em;
+  font-weight: 600;
+}
+
+.hrmBtnQuiet {
+  border-radius: 0.4em;
+  background: rgb(28 32 39 / 0.07);
+  color: rgb(28 32 39 / 0.68);
+  padding: 0.3em 0.7em;
+  font-size: 0.88em;
+}
+
+/* ====================================================================== *
+ * 03 — Portfolio · paper + butter
+ * ====================================================================== */
+
+.portfolio {
+  background: #f4f1e9;
+  color: #17161a;
+  flex-direction: column;
+  padding: 1.6em 2em 1.3em;
+  gap: 1.1em;
+}
+
+.portfolioTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 0.9em;
+  border-bottom: 0.08em solid rgb(23 22 26 / 0.18);
+}
+
+.portfolioNav {
+  display: flex;
+  gap: 1.4em;
+  font-size: 0.82em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgb(23 22 26 / 0.66);
+}
+
+.portfolioHead {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: 1em;
+}
+
+.portfolioTitle {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 5.6em;
+  font-weight: 600;
+  line-height: 0.84;
+  letter-spacing: -0.025em;
+  text-transform: uppercase;
+}
+
+.portfolioBody {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1.25fr;
+  gap: 1.6em;
+  min-height: 0;
+}
+
+.portfolioIndex {
+  display: flex;
+  flex-direction: column;
+}
+
+.portfolioIndexRow {
+  display: grid;
+  grid-template-columns: 3.2em 1fr auto;
+  gap: 0.8em;
+  align-items: baseline;
+  padding: 0.62em 0;
+  border-bottom: 0.07em solid rgb(23 22 26 / 0.14);
+  font-size: 0.92em;
+}
+
+.portfolioIndexRowActive {
+  color: #17161a;
+  font-weight: 600;
+}
+
+.portfolioIndexYear {
+  font-size: 0.85em;
+  color: rgb(23 22 26 / 0.62);
+  font-variant-numeric: tabular-nums;
+}
+
+.portfolioIndexDisc {
+  font-size: 0.82em;
+  color: rgb(23 22 26 / 0.62);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.portfolioPlate {
+  position: relative;
+  border-radius: 0.3em;
+  overflow: hidden;
+  background: #e6e1d5;
+  display: flex;
+  align-items: flex-end;
+  padding: 1em;
+}
+
+.portfolioPlateArt {
+  position: absolute;
+  inset: 0;
+}
+
+.portfolioCaption {
+  position: relative;
+  font-size: 0.82em;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #17161a;
+  background: #f4e98a;
+  padding: 0.35em 0.7em;
+}
+
+.portfolioFoot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 0.8em;
+  border-top: 0.08em solid rgb(23 22 26 / 0.18);
+  font-size: 0.82em;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: rgb(23 22 26 / 0.64);
+}
+
+/* ====================================================================== *
+ * 04 — Travel · coral + sky
+ * ====================================================================== */
+
+.travel {
+  background: #fdf7f4;
+  color: #1f1c1b;
+  flex-direction: column;
+}
+
+.travelHero {
+  position: relative;
+  height: 56%;
+  flex: none;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 1.3em 1.8em;
+  color: #fffaf7;
+}
+
+.travelSky {
+  position: absolute;
+  inset: 0;
+  background-color: #7d99b0;
+  background-image:
+    linear-gradient(180deg, #7fa8c9 0%, #b9cfdd 44%, #f0c3ae 72%, #f1b9a7 100%);
+}
+
+.travelSun {
+  position: absolute;
+  left: 62%;
+  top: 34%;
+  width: 6em;
+  height: 6em;
+  border-radius: 999em;
+  background: #fbe6d5;
+  opacity: 0.9;
+}
+
+.travelRidgeFar {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 46%;
+  background: #6f7f8c;
+  opacity: 0.55;
+  clip-path: polygon(0 62%, 14% 34%, 26% 52%, 42% 20%, 58% 46%, 74% 26%, 88% 48%, 100% 32%, 100% 100%, 0 100%);
+}
+
+.travelRidgeNear {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 34%;
+  background: #3f4a52;
+  clip-path: polygon(0 74%, 12% 52%, 30% 70%, 46% 40%, 62% 64%, 78% 44%, 92% 66%, 100% 54%, 100% 100%, 0 100%);
+}
+
+.travelWater {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 12%;
+  background: linear-gradient(180deg, #55636d, #38424a);
+}
+
+.travelHeroTop {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1em;
+}
+
+.travelHeroNav {
+  display: flex;
+  gap: 1.2em;
+  font-size: 0.84em;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+
+.travelHeroBottom {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.5em;
+}
+
+.travelHeroTitle {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 3.6em;
+  font-weight: 600;
+  line-height: 0.9;
+  letter-spacing: -0.02em;
+  text-shadow: 0 0.04em 0.3em rgb(20 24 28 / 0.35);
+}
+
+.travelHeroMeta {
+  display: flex;
+  gap: 0.5em;
+}
+
+.travelBook {
+  border-radius: 999em;
+  background: #fffaf7;
+  color: #1f1c1b;
+  padding: 0.55em 1.15em;
+  font-size: 0.9em;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.travelLower {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 1.4em;
+  padding: 1.2em 1.8em 1.3em;
+  min-height: 0;
+}
+
+.travelCards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.8em;
+  min-height: 0;
+}
+
+.travelCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+  min-width: 0;
+}
+
+.travelThumb {
+  position: relative;
+  border-radius: 0.5em;
+  flex: 1;
+  min-height: 3.5em;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+  padding: 0.6em;
+}
+
+.travelThumbTag {
+  font-size: 0.78em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #fffaf7;
+  text-shadow: 0 0.05em 0.3em rgb(20 24 28 / 0.5);
+}
+
+.travelCardTitle {
+  font-size: 0.92em;
+  font-weight: 600;
+}
+
+.travelCardMeta {
+  font-size: 0.8em;
+  color: rgb(31 28 27 / 0.64);
+}
+
+.travelItinerary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55em;
+  border-left: 0.08em solid rgb(31 28 27 / 0.14);
+  padding-left: 1.2em;
+}
+
+.travelDay {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6em;
+  font-size: 0.85em;
+}
+
+.travelDayIndex {
+  color: rgb(31 28 27 / 0.62);
+  font-variant-numeric: tabular-nums;
+  width: 3.2em;
+  flex: none;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* ====================================================================== *
+ * 05 — ERP · mint + graphite
+ * ====================================================================== */
+
+.erp {
+  background: #eef2ec;
+  color: #1a1c1a;
+}
+
+.erpSidebar {
+  width: 14em;
+  flex: none;
+  background: #1a1c1b;
+  color: #dfe6dc;
+  padding: 1.4em 1.1em;
+  display: flex;
+  flex-direction: column;
+  gap: 1.4em;
+}
+
+.erpModuleNav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1em;
+}
+
+.erpModuleNavItem {
+  display: flex;
+  align-items: center;
+  gap: 0.65em;
+  padding: 0.45em 0.6em;
+  border-radius: 0.45em;
+  font-size: 0.9em;
+  color: rgb(223 230 220 / 0.66);
+}
+
+.erpModuleNavItemActive {
+  background: rgb(203 239 174 / 0.16);
+  color: #cbefae;
+}
+
+.erpMain {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.erpTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1em;
+  padding: 1.1em 1.6em;
+  border-bottom: 0.07em solid rgb(26 28 26 / 0.09);
+  background: #f8faf7;
+}
+
+.erpTitle {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 1.9em;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.015em;
+}
+
+.erpTiles {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.7em;
+  padding: 1.1em 1.6em 0;
+}
+
+.erpTile {
+  background: #ffffff;
+  border-radius: 0.6em;
+  padding: 0.7em 0.75em;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2em;
+}
+
+.erpTileValue {
+  font-family: var(--font-display);
+  font-size: 1.7em;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.erpTileLabel {
+  font-size: 0.76em;
+  color: rgb(26 28 26 / 0.64);
+}
+
+.erpBody {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 1em;
+  padding: 1em 1.6em;
+  min-height: 0;
+}
+
+.erpPanel {
+  background: #ffffff;
+  border-radius: 0.7em;
+  padding: 0.9em 1em;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6em;
+  min-height: 0;
+}
+
+.erpPanelTitle {
+  font-size: 0.8em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgb(26 28 26 / 0.64);
+}
+
+.erpTable {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.84em;
+}
+
+.erpRow {
+  display: grid;
+  grid-template-columns: 5.5em 1fr 5em 5.5em;
+  gap: 0.7em;
+  align-items: center;
+  padding: 0.42em 0;
+  border-bottom: 0.07em solid rgb(26 28 26 / 0.07);
+}
+
+.erpRowHead {
+  color: rgb(26 28 26 / 0.62);
+  font-size: 0.84em;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-bottom-width: 0.1em;
+}
+
+.erpStock {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55em;
+}
+
+.erpStockRow {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25em;
+  font-size: 0.82em;
+}
+
+.erpStockTrack {
+  height: 0.42em;
+  border-radius: 999em;
+  background: rgb(26 28 26 / 0.09);
+  overflow: hidden;
+}
+
+.erpStockFill {
+  height: 100%;
+  border-radius: 999em;
+  background: #7fbf5a;
+}
+
+.erpFooter {
+  position: relative;
+  display: flex;
+  align-items: center;
+  /* The handoff phrase sits dead centre so the home-page camera can push
+     toward it without dragging the whole screen off to one side. */
+  justify-content: center;
+  gap: 1em;
+  padding: 0.95em 1.6em;
+  background: #1a1c1b;
+  color: #dfe6dc;
+}
+
+.erpFooterMark {
+  position: absolute;
+  left: 1.6em;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0.55;
+}
+
+.erpPhrase {
+  font-family: var(--font-display);
+  font-size: 1.5em;
+  font-weight: 600;
+  /* Metrics deliberately match `.display-lg`, because this exact node is
+     measured and handed to the next section's heading on the home page. */
+  line-height: 0.9;
+  letter-spacing: -0.015em;
+  color: #cbefae;
+  white-space: nowrap;
+}

@@ -1,0 +1,50 @@
+/*
+ * Two opposing marquees.
+ *
+ * Deliberately CSS rather than GSAP: a transform keyframe loop runs on the
+ * compositor, pauses with a single declaration on hover or focus, and needs no
+ * JavaScript at all to become a static list under reduced motion.
+ */
+
+.row {
+  display: flex;
+  width: max-content;
+  gap: var(--gap);
+  --gap: clamp(1.75rem, 3vw, 3.25rem);
+  animation: marquee var(--duration) linear infinite;
+  will-change: transform;
+}
+
+.rowReverse {
+  animation-direction: reverse;
+}
+
+.viewport:hover .row,
+.viewport:focus-within .row {
+  animation-play-state: paused;
+}
+
+@keyframes marquee {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    /* The list is rendered twice; travelling exactly half the track plus one
+       gap lands the copy back on the original's position. */
+    transform: translate3d(calc(-50% - (var(--gap) / 2)), 0, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .row {
+    animation: none;
+    flex-wrap: wrap;
+    width: 100%;
+    row-gap: 0.75rem;
+  }
+
+  /* The duplicate exists only to make the loop seamless. */
+  .duplicate {
+    display: none;
+  }
+}

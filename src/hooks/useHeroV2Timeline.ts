@@ -164,8 +164,53 @@ export function useHeroV2Timeline({
           rotateY: amount("--hero-ry-near", -1.5),
         };
 
-        // --- initial state, set before the first animated frame ----------
-        gsap.set(stage, { ...rest, transformOrigin: "50% 50%" });
+        /* --- initial state, set before the first animated frame ----------
+         *
+         * This is no longer the *first* time the resting pose is applied: the
+         * stylesheet now states it too, from these same five custom
+         * properties, so it is already true in the frame the browser paints
+         * before this hook can run. What happens here is the handover from that
+         * rule to GSAP's inline transform, and the two are built to land on the
+         * identical matrix.
+         *
+         * Every channel is written explicitly, including the four that `rest`
+         * has no opinion about, and that is the whole trick.
+         *
+         * GSAP seeds an element's transform record by decomposing its computed
+         * matrix, and that decomposition assumes the scale is uniform across
+         * all three axes. The stylesheet's `scale()` is two-dimensional — it
+         * scales x and y and leaves z alone — so the matrix it produces is one
+         * GSAP's inverse cannot express, and it lands on the nearest thing it
+         * can: it reads 11deg/-13deg back as 6.43/-7.72 and makes up the
+         * difference as 1.64deg of in-plane `rotation` plus 1.64deg of
+         * `skewX`. The rotations and the scale are then overwritten from
+         * `rest` — but nothing in this hero ever sets `rotation` or `skewX`,
+         * so those two survived the handover and stayed on the frame for the
+         * entire timeline. That is a canvas visibly rotated and sheared in the
+         * plane of the screen, worst of all at the near pose where it is meant
+         * to be square to the reader.
+         *
+         * `x`/`y` are zeroed for a second, unrelated reason: a computed matrix
+         * has no notion of a percentage, so the stylesheet's
+         * `translate(22%, 22%)` comes back as pixels and lands in `x`/`y`.
+         * Setting `xPercent`/`yPercent` without clearing those would apply
+         * both and put the canvas at roughly twice its intended offset.
+         *
+         * Between them these six zeroes mean the pose after this line is
+         * exactly `rest`, whatever the parse made of the CSS — which is what
+         * lets the stylesheet state the resting pose for the first paint
+         * without GSAP inheriting a misreading of it.
+         * --------------------------------------------------------------- */
+        gsap.set(stage, {
+          ...rest,
+          x: 0,
+          y: 0,
+          z: 0,
+          rotation: 0,
+          skewX: 0,
+          skewY: 0,
+          transformOrigin: "50% 50%",
+        });
 
         /*
          * The stylesheet hides every view but the first, so a cold load cannot

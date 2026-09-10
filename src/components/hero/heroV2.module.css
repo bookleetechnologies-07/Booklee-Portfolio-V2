@@ -357,8 +357,78 @@
   }
 }
 
+/*
+ * The shell wrapper around the copy.
+ *
+ * In the stacked branch `.layout` is a real flex column and carries `shell`
+ * itself, so this element only has to fill it. In the cinematic branch
+ * `.layout` becomes `display: contents` and stops generating a box at all,
+ * which takes its `shell` with it — so the gutter has to be re-established
+ * here, on the one element in the copy layer that still has a box.
+ *
+ * These four declarations are `shell` from `globals.css`, restated. They used
+ * to be applied as a Tailwind class chosen in JS by the `cinematic` flag, and
+ * that is precisely why the hero flashed on load: see `.headline` below.
+ */
+.copyShell {
+  width: 100%;
+}
+
+@media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
+  .copyShell {
+    max-width: var(--spacing-shell);
+    margin-inline: auto;
+    padding-inline: 2.5rem;
+  }
+}
+
+@media (min-width: 1280px) and (prefers-reduced-motion: no-preference) {
+  .copyShell {
+    padding-inline: 4rem;
+  }
+}
+
 .copyInner {
   pointer-events: auto;
+}
+
+@media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
+  .copyInner {
+    max-width: 46rem;
+  }
+}
+
+/*
+ * The headline's cinematic type scale — `display-xl` from `globals.css`, minus
+ * the family and weight it shares with the `display-lg` underneath it.
+ *
+ * This is here rather than in the markup because of *when* the markup knows
+ * which branch it is in. `useMotionMode` reads a media query through
+ * `useSyncExternalStore`, whose server snapshot is `false`, so the prerendered
+ * HTML — and therefore the first frame the browser paints — always carries the
+ * stacked branch's classes, even on a desktop where the stylesheet has already
+ * laid the scene out cinematically. The upgrade only lands on the re-render
+ * after hydration.
+ *
+ * Left in JS, that made every desktop load show the headline at `display-lg`
+ * (80px at 1440) and then jump it to `display-xl` (100px) a frame later, with
+ * the gutter appearing underneath it at the same moment. Worse, `RevealText`
+ * splits this element into lines in a layout effect on the *first* render, so
+ * the split was measured against the smaller type and the line breaks were
+ * wrong once the larger type arrived.
+ *
+ * Expressed as a media query it is simply true at first paint, which is what
+ * the top of this file claims the whole two-layout split does.
+ *
+ * Unlayered, so it wins over `display-lg` in `@layer components` regardless of
+ * source order.
+ */
+@media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
+  .headline {
+    font-size: clamp(2.75rem, 6.6vw, 6.25rem);
+    line-height: 0.88;
+    letter-spacing: -0.018em;
+  }
 }
 
 /*
@@ -570,6 +640,35 @@
   .stage {
     transform-style: preserve-3d;
     will-change: transform;
+
+    /*
+     * The resting pose, in CSS, so it is true at first paint.
+     *
+     * The timeline sets exactly this with `gsap.set()` before it builds — but
+     * that only runs once `enabled` has flipped to true, which is one render
+     * later than the first paint. Until this rule existed the browser painted
+     * the canvas at its natural pose first: full size, flat on, dead centre.
+     * On a 1440-wide screen that is a 1280px window snapping down to 58% and
+     * rotating into three-quarter view, which is the jump on refresh.
+     *
+     * The values are the same custom properties the timeline reads off
+     * `.scene` with `getComputedStyle`, so the two cannot disagree — including
+     * on tablet, where the stylesheet redefines all five to flatter numbers.
+     *
+     * The order of the functions matters and is not free: it is GSAP's own
+     * composition order (translate, rotate, rotateY, rotateX, skew, scale). A
+     * different order is a different matrix at these angles, and the swap from
+     * this rule to GSAP's inline transform would itself be a visible jolt.
+     */
+    transform-origin: 50% 50%;
+    transform:
+      translate(
+        calc(var(--hero-shift-rest) * 1%),
+        calc(var(--hero-lift-rest) * 1%)
+      )
+      rotateY(calc(var(--hero-ry-rest) * 1deg))
+      rotateX(calc(var(--hero-rx-rest) * 1deg))
+      scale(var(--hero-scale-rest));
   }
 }
 
@@ -666,6 +765,10 @@
     display: block;
     background: #050506;
     pointer-events: none;
+    /* Matches `gsap.set(veil, { opacity: veilRest })`. Without it the veil
+       painted fully opaque for a frame and the canvas came up black before
+       lifting to its resting dim. */
+    opacity: var(--hero-veil-rest);
   }
 }
 

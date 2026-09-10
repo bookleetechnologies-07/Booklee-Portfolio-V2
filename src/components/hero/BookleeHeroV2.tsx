@@ -73,18 +73,31 @@ export function BookleeHeroV2() {
       <div data-hero="scene" className={cn(styles.scene, "on-dark grain")}>
         <HeroAtmosphere />
 
-        <div className={cn(styles.layout, !cinematic && "shell")}>
+        {/*
+          None of the classes below are chosen by `cinematic`, and that is
+          load-bearing rather than tidiness. `useMotionMode` is a media query
+          read through `useSyncExternalStore`, and its server snapshot is
+          `false` — so the prerendered HTML always carries the stacked branch,
+          the browser paints that first even on a desktop whose stylesheet has
+          already gone cinematic, and the swap only lands on the re-render after
+          hydration. Anything switched here is therefore guaranteed to be wrong
+          in the first painted frame. `shell` is inert in the cinematic branch
+          because `.layout` is `display: contents` there, and the three
+          differences it used to hide now live in media queries in
+          `heroV2.module.css`.
+        */}
+        <div className={cn(styles.layout, "shell")}>
           <div data-hero="copy" className={styles.copy}>
-            <div className={cn(cinematic && "shell w-full")}>
-              <div className={cn(styles.copyInner, cinematic && "max-w-[46rem]")}>
+            <div className={styles.copyShell}>
+              <div className={styles.copyInner}>
                 <Eyebrow className="text-fog">{HERO_EYEBROW}</Eyebrow>
                 <RevealText
                   as="h1"
                   immediate
                   delay={0.15}
                   className={cn(
-                    "mt-6 text-balance text-bone uppercase",
-                    cinematic ? "display-xl" : "display-lg",
+                    "mt-6 text-balance text-bone uppercase display-lg",
+                    styles.headline,
                   )}
                 >
                   {HERO_HEADLINE}

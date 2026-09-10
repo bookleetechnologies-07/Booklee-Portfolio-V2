@@ -127,8 +127,13 @@ export const portfolioEntries: PortfolioEntry[] = [
     url: "https://www.anisboutique.in/index.html",
     displayUrl: "anisboutique.in",
     accent: "lilac",
-    /* No approved capture yet, so the gallery sets it as a typographic plate. */
-    preview: null,
+    preview: {
+      src: "/portfolio/portfolio-anis-boutique.png",
+      width: 2880,
+      height: 1800,
+      alt: "The Anis Boutique home page: a full-bleed photograph of the shop’s interior, its shelves stacked floor to ceiling with bolts of coloured fabric, and a worktop of thread spools, beading and gold scissors in the foreground. “Anis Boutique” is set across the middle above the lines “all in one shop for all your designing needs” and “linings, blouses, satin, net, stitching items, aari materials”, with a search field above and an Explore button below.",
+      capturedOn: "2026-09-10",
+    },
   },
 ];
 

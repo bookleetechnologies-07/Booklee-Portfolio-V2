@@ -2,7 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
+import { createPortal } from "react-dom";
 
 import { navItems } from "@/content/nav";
 import { siteConfig } from "@/content/site";
@@ -11,10 +19,20 @@ import { cn } from "@/lib/cn";
 const FOCUSABLE =
   'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
+/** True only on the client, without an effect and without a hydration gap. */
+const subscribeNever = () => () => {};
+const useMounted = () =>
+  useSyncExternalStore(
+    subscribeNever,
+    () => true,
+    () => false,
+  );
+
 export function MobileMenu() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const panelId = useId();
+  const mounted = useMounted();
   const panelRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
 
@@ -112,72 +130,115 @@ export function MobileMenu() {
         </span>
       </button>
 
-      <div
-        id={panelId}
-        ref={panelRef}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Site navigation"
-        hidden={!open}
-        className={cn(
-          "on-dark fixed inset-0 z-40 flex flex-col bg-ink text-bone lg:hidden",
-          "grain grain-strong",
-        )}
-      >
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 opacity-70 [background:radial-gradient(120%_70%_at_80%_0%,rgba(220,204,244,0.14),transparent_60%)]"
-        />
-        <nav
-          aria-label="Primary"
-          className="shell relative z-10 flex flex-1 flex-col justify-center overflow-y-auto pt-[calc(var(--header-h)+1.5rem)] pb-10"
-        >
-          <ul className="flex flex-col">
-            {navItems.map((item, index) => {
-              const active =
-                item.href === "/"
-                  ? pathname === "/"
-                  : pathname.startsWith(item.href);
-              return (
-                <li key={item.href} className="border-b border-white/10">
-                  <Link
-                    href={item.href}
-                    aria-current={active ? "page" : undefined}
-                    className="flex items-baseline gap-4 py-5"
-                  >
-                    <span className="meta w-8 shrink-0 text-fog/50">
-                      0{index + 1}
-                    </span>
-                    <span
-                      className={cn(
-                        "display-lg",
-                        active ? "text-mint" : "text-bone",
-                      )}
-                    >
-                      {item.label}
-                    </span>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
+      {mounted
+        ? createPortal(
+            <div
+              id={panelId}
+              ref={panelRef}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Site navigation"
+              hidden={!open}
+              className={cn(
+                "on-dark fixed inset-0 z-[60] flex flex-col bg-black text-bone lg:hidden",
+                "grain grain-strong",
+              )}
+            >
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0 opacity-70 [background:radial-gradient(120%_70%_at_80%_0%,rgba(220,204,244,0.14),transparent_60%)]"
+              />
+              <nav
+                aria-label="Primary"
+                className="shell relative z-10 flex flex-1 flex-col justify-center overflow-y-auto pt-[calc(var(--header-h)+1.5rem)] pb-10"
+              >
+                <ul className="flex flex-col">
+                  {navItems.map((item, index) => {
+                    const active =
+                      item.href === "/"
+                        ? pathname === "/"
+                        : pathname.startsWith(item.href);
+                    return (
+                      <li key={item.href} className="border-b border-white/10">
+                        <Link
+                          href={item.href}
+                          aria-current={active ? "page" : undefined}
+                          className="flex items-baseline gap-4 py-5"
+                        >
+                          <span className="meta w-8 shrink-0 text-fog/50">
+                            0{index + 1}
+                          </span>
+                          <span
+                            className={cn(
+                              "display-lg",
+                              active ? "text-mint" : "text-bone",
+                            )}
+                          >
+                            {item.label}
+                          </span>
+                        </Link>
 
-          <div className="mt-10 flex flex-col gap-4">
-            <Link
-              href="/book-a-call"
-              className="inline-flex h-14 items-center justify-center rounded-full bg-mint px-8 text-base font-medium text-ink"
-            >
-              Book a call
-            </Link>
-            <a
-              href={`mailto:${siteConfig.email}`}
-              className="meta text-fog/70 underline-offset-4 hover:underline"
-            >
-              {siteConfig.email}
-            </a>
-          </div>
-        </nav>
-      </div>
+                        {/*
+                          Sub-destinations are simply present and expanded — no
+                          accordion to discover and nothing to toggle. The
+                          parent above stays a real link, so /services is never
+                          traded away for its own submenu.
+                        */}
+                        {item.children ? (
+                          <ul
+                            aria-label={`${item.label} sections`}
+                            className="-mt-1 flex flex-col gap-1 pb-5 pl-12"
+                          >
+                            {item.children.map((child) => {
+                              const childActive =
+                                child.href === "/services"
+                                  ? pathname === "/services"
+                                  : pathname.startsWith(child.href);
+                              return (
+                                <li key={child.href}>
+                                  <Link
+                                    href={child.href}
+                                    aria-current={
+                                      childActive ? "page" : undefined
+                                    }
+                                    className={cn(
+                                      "flex min-h-11 items-center text-base",
+                                      childActive
+                                        ? "text-mint"
+                                        : "text-fog/70",
+                                    )}
+                                  >
+                                    {child.label}
+                                  </Link>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        ) : null}
+                      </li>
+                    );
+                  })}
+                </ul>
+
+                <div className="mt-10 flex flex-col gap-4">
+                  <Link
+                    href="/book-a-call"
+                    className="inline-flex h-14 items-center justify-center rounded-[12px] bg-mint px-8 text-base font-medium text-ink"
+                  >
+                    Book a call
+                  </Link>
+                  <a
+                    href={`mailto:${siteConfig.email}`}
+                    className="meta text-fog/70 underline-offset-4 hover:underline"
+                  >
+                    {siteConfig.email}
+                  </a>
+                </div>
+              </nav>
+            </div>,
+            document.body,
+          )
+        : null}
     </>
   );
 }

@@ -1,0 +1,321 @@
+/*
+ * Hero scene — true black, camera entry, immersive deck.
+ *
+ * The gating rules below are the fix for the premature-CRM bug. Every state
+ * that must be correct before hydration is expressed in CSS, keyed off media
+ * queries only, so the very first paint on a cold load is already right and
+ * nothing has to be corrected by JavaScript afterwards.
+ */
+
+.scene {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  background-color: #000000;
+  color: var(--color-fog);
+}
+
+/* Cinematic branch: full viewport and pinned. */
+@media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
+  .scene {
+    height: 100vh;
+  }
+}
+
+.fog {
+  position: absolute;
+  pointer-events: none;
+  border-radius: 999em;
+  will-change: transform;
+}
+
+.fogA {
+  inset: 10% -22% 18% -22%;
+  background: radial-gradient(
+    50% 50% at 50% 50%,
+    rgb(217 217 213 / 0.1) 0%,
+    transparent 70%
+  );
+}
+
+.fogB {
+  inset: 40% 2% 2% 2%;
+  background: radial-gradient(
+    50% 50% at 50% 50%,
+    rgb(191 217 242 / 0.09) 0%,
+    transparent 68%
+  );
+}
+
+/*
+ * The screen's light bleeding into the room. Two large, cheap radial gradients
+ * whose opacity the timeline drives — no filter, no blur, nothing that would
+ * cost a full-viewport repaint every frame.
+ */
+.screenGlow {
+  position: absolute;
+  inset: -10%;
+  /* Above the canvas so it actually composites over the scene, and screen-blend
+     so it only ever adds light to the black room. */
+  z-index: 3;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(
+    52% 40% at 50% 62%,
+    rgb(250 250 247 / 0.22) 0%,
+    rgb(203 239 174 / 0.07) 36%,
+    transparent 72%
+  );
+  mix-blend-mode: screen;
+}
+
+.screenGlowTight {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(
+    30% 20% at 50% 70%,
+    rgb(255 255 255 / 0.3) 0%,
+    transparent 70%
+  );
+  mix-blend-mode: screen;
+}
+
+.vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+  background: radial-gradient(
+    120% 84% at 50% 46%,
+    transparent 38%,
+    rgb(0 0 0 / 0.8) 100%
+  );
+}
+
+/* --- 3D / fallback stage --------------------------------------------- */
+
+/*
+ * Layout switch. On small screens the hero is ordinary document flow, so the
+ * wrapper is a real flex column; in the cinematic branch it dissolves with
+ * `display: contents` and its children become absolutely-positioned layers of
+ * the pinned scene. One markup tree, two layouts, no conditional rendering.
+ */
+.compactWrap {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 2.25rem;
+  padding-block: calc(var(--header-h) + 2.5rem) 3.5rem;
+}
+
+.stage {
+  position: relative;
+  z-index: 2;
+}
+
+@media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
+  .compactWrap {
+    display: contents;
+  }
+
+  .stage {
+    position: absolute;
+    inset: 0;
+  }
+}
+
+.canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+
+/* --- immersive deck --------------------------------------------------- */
+
+/*
+ * Small screens: an ordinary block with a fixed ratio, visible immediately and
+ * swipeable. No pin, no scroll trap.
+ */
+.deck {
+  position: relative;
+  z-index: 4;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #000000;
+}
+
+.track {
+  display: flex;
+  height: 100%;
+}
+
+.slide {
+  position: relative;
+  flex: 0 0 100%;
+  height: 100%;
+  min-width: 0;
+}
+
+/*
+ * Cinematic branch: the deck becomes a card of fixed size that the WebGL scene
+ * projects onto the laptop's panel, and it starts hidden and inert.
+ *
+ * `visibility: hidden` here is the single declaration that guarantees no
+ * project preview can be seen before the timeline reaches its phase — it is
+ * true at first paint, before React has hydrated anything.
+ *
+ * The size is fixed and comes from `--card-w` / `--card-h`, which the component
+ * sets from the same module the scene measures the card with. Nothing about
+ * where this element *appears* is decided here: the scene writes a `matrix3d`
+ * onto it every frame that lands its four corners on the four corners of the
+ * display. Laying it out at the top-left and leaving it there is what makes
+ * that transform the only thing that moves it, and a box that never changes
+ * size is a box the browser never re-lays-out mid-scroll.
+ */
+@media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
+  .deck {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: var(--card-w);
+    height: var(--card-h);
+    aspect-ratio: auto;
+    border-radius: 18px;
+    transform-origin: 0 0;
+    /* Off-screen until the scene's first frame lands it on the panel, so a
+       cold load can never show the card at the corner of the viewport. */
+    transform: scale(0);
+    will-change: transform;
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    /*
+       The light the card appears to spill onto the glass around it.
+
+       Most of that glow is painted into the display's emissive texture, which
+       is what actually lights the keyboard and the room. This is the last
+       centimetre of it: a halo that is guaranteed to sit exactly on the card's
+       own edge whatever the texture's resolution is, so the card never reads as
+       a picture pasted onto the screen.
+    */
+    box-shadow:
+      0 0 34px 2px rgb(255 255 255 / 0.2),
+      0 0 96px 18px rgb(255 255 255 / 0.11);
+  }
+
+  .track {
+    display: block;
+    height: 100%;
+  }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    height: auto;
+  }
+}
+
+.deckLabel {
+  /* On small screens the category sits under the deck with the controls, so it
+     never covers the website it is labelling. */
+  display: none;
+}
+
+@media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
+  .deckLabel {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 1.5rem;
+    z-index: 6;
+    display: flex;
+    justify-content: center;
+    pointer-events: none;
+  }
+}
+
+.deckLabelInner {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid rgb(250 250 247 / 0.16);
+  border-radius: 999px;
+  background: rgb(0 0 0 / 0.62);
+  color: var(--color-bone);
+}
+
+/* --- intro copy ------------------------------------------------------- */
+
+.intro {
+  position: relative;
+  z-index: 5;
+  pointer-events: none;
+}
+
+@media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
+  .intro {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: flex-start;
+    padding-top: max(13vh, calc(var(--header-h) + 4.5vh));
+  }
+}
+
+.introInner {
+  pointer-events: auto;
+}
+
+@media (max-width: 767.98px), (prefers-reduced-motion: reduce) {
+  .scrollHint {
+    display: none;
+  }
+}
+
+.scrollHint {
+  position: absolute;
+  left: 50%;
+  bottom: 2.2rem;
+  z-index: 5;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: rgb(217 217 213 / 0.5);
+}
+
+.scrollHintLine {
+  display: block;
+  width: 2.4rem;
+  height: 1px;
+  background: currentColor;
+}
+
+/* --- phrase overlay --------------------------------------------------- */
+
+.phraseOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 45;
+  transform-origin: 0 0;
+  pointer-events: none;
+  visibility: hidden;
+  white-space: nowrap;
+  will-change: transform;
+}
+
+/* --- compact (fallback) laptop --------------------------------------- */
+
+.compactStage {
+  perspective: 1500px;
+  perspective-origin: 50% 18%;
+  padding-bottom: 14%;
+}

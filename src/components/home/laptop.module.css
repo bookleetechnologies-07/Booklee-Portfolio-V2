@@ -20,9 +20,9 @@
   /* A solid base under the gradient. Contrast checkers (and the odd browser
      that fails to paint a gradient) resolve the colour behind the transparent
      header from this, rather than falling through to the page background. */
-  background-color: #101113;
+  background-color: #000000;
   background-image:
-    radial-gradient(120% 78% at 50% 8%, #2a2c31 0%, #17181b 46%, #0b0b0d 100%);
+    radial-gradient(120% 76% at 50% 6%, #26282d 0%, #101114 40%, #000000 78%);
   color: var(--color-fog);
 }
 
@@ -60,8 +60,8 @@
   height: 38%;
   pointer-events: none;
   background:
-    linear-gradient(180deg, transparent 0%, rgb(11 11 13 / 0.5) 66%, #08080a 100%),
-    radial-gradient(130% 100% at 50% 0%, rgb(70 72 79 / 0.5) 0%, transparent 64%);
+    linear-gradient(180deg, transparent 0%, rgb(0 0 0 / 0.6) 62%, #000000 100%),
+    radial-gradient(130% 100% at 50% 0%, rgb(74 76 84 / 0.42) 0%, transparent 66%);
 }
 
 .vignette {
@@ -71,8 +71,8 @@
   z-index: 20;
   background: radial-gradient(
     118% 82% at 50% 44%,
-    transparent 42%,
-    rgb(6 6 8 / 0.62) 100%
+    transparent 40%,
+    rgb(0 0 0 / 0.72) 100%
   );
 }
 

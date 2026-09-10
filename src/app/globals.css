@@ -5,10 +5,18 @@
  * ------------------------------------------------------------------ */
 
 @theme {
-  --color-ink: #0b0b0d;
-  --color-graphite: #202124;
-  --color-graphite-deep: #16171a;
-  --color-graphite-soft: #2b2c30;
+  /*
+   * The landing page sits on true black. `ink` and `graphite` are kept as
+   * tokens because a few interior objects (the laptop chassis, raised panels,
+   * borders) still need to read as *slightly* lighter than the page, but no
+   * full-width section background uses them any more.
+   */
+  --color-black: #000000;
+  --color-ink: #000000;
+  --color-graphite: #000000;
+  --color-graphite-deep: #0a0a0b;
+  --color-graphite-soft: #17181a;
+  --color-panel: #0e0f11;
   --color-fog: #d9d9d5;
   --color-paper: #f3f1ec;
   --color-bone: #fafaf7;
@@ -47,7 +55,12 @@
   --accent-mint: var(--color-mint);
   --accent-coral: var(--color-coral);
 
-  --header-h: 4.5rem;
+  /* Floating bar: 12–20px of offset plus the bar itself. */
+  --header-h: 4.75rem;
+
+  /* Depth on black comes from light and opacity, never from a grey page. */
+  --rule-soft: rgb(250 250 247 / 0.1);
+  --rule-strong: rgb(250 250 247 / 0.2);
 
   /* Tiny procedural grain. Kept as a data URI so it costs no request and no
      decode of a large bitmap. */
@@ -172,6 +185,24 @@
     font-size: clamp(1.0625rem, 1.35vw, 1.25rem);
     line-height: 1.55;
     max-width: 34ch;
+  }
+
+  /*
+   * Room for descenders inside the line-reveal mask.
+   *
+   * SplitText wraps each line in a clipping box the height of the line box, and
+   * the display sizes above set `line-height` below 1 — which is what gives the
+   * headings their tight, stacked look. A line box shorter than the type means
+   * the tails of y, g and p fall outside it, so every masked heading with a
+   * descender in it was being sliced along the baseline.
+   *
+   * `overflow: clip` clips at the padding box, so padding on the mask is extra
+   * visible height; the matching negative margin takes it back out of the flow,
+   * leaving the leading exactly as it was set.
+   */
+  .reveal-line-mask {
+    padding-bottom: 0.18em;
+    margin-bottom: -0.18em;
   }
 
   .prose-body {

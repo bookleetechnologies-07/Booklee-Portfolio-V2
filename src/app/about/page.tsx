@@ -6,7 +6,7 @@ import { Eyebrow } from "@/components/ui/Eyebrow";
 import { PageIntro } from "@/components/ui/PageIntro";
 import { Reveal } from "@/components/ui/Reveal";
 import { RevealText } from "@/components/ui/RevealText";
-import { processSteps } from "@/content/services";
+import { ProcessTiles } from "@/components/home/ProcessTiles";
 
 export const metadata: Metadata = {
   title: "About us",
@@ -68,7 +68,7 @@ export default function AboutPage() {
       <section
         data-nav-theme="dark"
         aria-labelledby="manifesto-heading"
-        className="on-dark grain relative bg-graphite text-fog section-pad"
+        className="on-dark grain relative bg-black text-fog section-pad"
       >
         <div className="shell">
           <Eyebrow className="text-fog">Manifesto</Eyebrow>
@@ -79,8 +79,15 @@ export default function AboutPage() {
           >
             No forced templates. No unnecessary features.
           </RevealText>
+          {/*
+            Scrubbed rather than staggered: the six principles are meant to be
+            read one at a time as the reader comes down the section, and a timed
+            stagger fires them all off the moment the grid crosses a line no
+            matter how fast or slowly anyone is moving. They are all fully
+            revealed by roughly the middle of the section's pass.
+          */}
           <Reveal
-            stagger
+            sequence
             className="mt-14 grid gap-x-8 gap-y-10 md:grid-cols-2 lg:grid-cols-3"
           >
             {PRINCIPLES.map((principle) => (
@@ -96,56 +103,19 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section
-        data-nav-theme="light"
-        aria-labelledby="process-heading"
-        className="paper-tooth grain relative bg-paper section-pad"
-      >
-        <div className="shell">
-          <div className="grid-12 items-end gap-y-8">
-            <div className="col-span-4 md:col-span-8 lg:col-span-6">
-              <Eyebrow>How we work together</Eyebrow>
-              <RevealText
-                as="h2"
-                id="process-heading"
-                className="display-lg mt-6"
-              >
-                Four steps, and none of them are a surprise.
-              </RevealText>
-            </div>
-            <Reveal className="col-span-4 md:col-span-8 lg:col-span-5 lg:col-start-8">
-              <p className="prose-body text-muted">
-                The shape stays the same whether the project is a five-page site
-                or an operations platform. What changes is how long each step
-                takes and how much of it you want to be in the room for.
-              </p>
-            </Reveal>
-          </div>
+      <ProcessTiles />
 
-          <ol className="mt-16 grid gap-px overflow-hidden rounded-[20px] border border-ink/12 bg-ink/12 md:grid-cols-2 lg:grid-cols-4">
-            {processSteps.map((step) => (
-              <li
-                key={step.index}
-                className="flex flex-col gap-4 bg-paper p-7 md:p-8"
-              >
-                <span className="meta text-muted tabular-nums">
-                  {step.index}
-                </span>
-                <h3 className="display-sm">{step.title}</h3>
-                <p className="prose-body text-muted">{step.body}</p>
-              </li>
-            ))}
-          </ol>
+      {/*
+        There was a pale band between here and the call to action carrying a
+        single paragraph about the size of the team. The paragraph has been
+        removed, and the section went with it: it existed only to hold that one
+        sentence, so leaving it behind would have left an empty page-width strip
+        of paper between two black sections.
 
-          <p className="meta mt-10 max-w-[56ch] text-muted">
-            {/* TODO_CONTENT: add real team information once Booklee is ready to
-                name people publicly. No team members are invented here. */}
-            Booklee is a small team. You will work with the people who do the
-            work, and we will tell you honestly when something is outside what
-            we should take on.
-          </p>
-        </div>
-      </section>
+        Nothing else needs adjusting for it. `ProcessTiles` and `BookingCTA` are
+        both dark and both carry their own top hairline, so they meet the way
+        every other pair of dark sections on the site does.
+      */}
 
       <BookingCTA
         heading="Tell us how your business actually runs."

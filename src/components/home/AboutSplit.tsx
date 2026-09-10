@@ -1,6 +1,6 @@
+import { BrandReveal } from "@/components/home/BrandReveal";
 import { ArrowLink } from "@/components/ui/ArrowLink";
 import { Eyebrow } from "@/components/ui/Eyebrow";
-import { Monogram } from "@/components/ui/Logo";
 import { Reveal } from "@/components/ui/Reveal";
 import { RevealText } from "@/components/ui/RevealText";
 import { cn } from "@/lib/cn";
@@ -19,26 +19,7 @@ export function AboutSplit({ className }: { className?: string }) {
     >
       <div className="grid-12 shell items-center gap-y-12 section-pad">
         <div className="col-span-4 md:col-span-8 lg:col-span-5">
-          <div className="grain relative aspect-[5/4] overflow-hidden rounded-[24px] bg-lilac">
-            <div
-              aria-hidden="true"
-              className="absolute inset-0 [background:radial-gradient(120%_90%_at_20%_10%,rgba(250,250,247,0.7),transparent_62%)]"
-            />
-            <Monogram
-              className="absolute -top-[14%] -left-[10%] h-[128%] w-auto text-ink/85"
-              title="Booklee"
-            />
-            {/* One quiet annotation — a print-like registration mark rather
-                than a floating icon. Kept clear of the cropped monogram so it
-                stays readable. */}
-            <span className="absolute top-6 right-6 flex items-center gap-2.5 text-ink/45">
-              <span className="eyebrow">Studio practice</span>
-              <span
-                aria-hidden="true"
-                className="block h-7 w-7 rounded-full border border-current"
-              />
-            </span>
-          </div>
+          <BrandReveal />
         </div>
 
         <div className="col-span-4 md:col-span-8 lg:col-span-6 lg:col-start-7">

@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 
-import { CalendlyEmbed } from "@/components/booking/CalendlyEmbed";
+import { BookingPanel } from "@/components/booking/BookingPanel";
 import { Eyebrow } from "@/components/ui/Eyebrow";
-import { PageIntro } from "@/components/ui/PageIntro";
 import { Reveal } from "@/components/ui/Reveal";
+import { RevealText } from "@/components/ui/RevealText";
 import { calendlyUrl, siteConfig } from "@/content/site";
 
 export const metadata: Metadata = {
@@ -19,25 +19,6 @@ export const metadata: Metadata = {
   },
 };
 
-const PREPARE = [
-  {
-    title: "What the work is for",
-    body: "The outcome you want, in your own words. Even a rough version is more useful than a feature list.",
-  },
-  {
-    title: "How it happens today",
-    body: "Whatever you use now — a spreadsheet, a tool you have outgrown, a manual process. Screenshots are perfect.",
-  },
-  {
-    title: "Who it is for",
-    body: "Customers, staff, or both, and roughly how many. This changes the shape of almost every decision.",
-  },
-  {
-    title: "Timing and constraints",
-    body: "Any fixed date, existing system, or budget shape you are working within. Earlier is better than later.",
-  },
-];
-
 const AGENDA = [
   "What you are trying to achieve, and what is getting in the way",
   "Where a website or system would genuinely help, and where it would not",
@@ -45,92 +26,84 @@ const AGENDA = [
   "How we would work together, what it would cost, and roughly how long",
 ];
 
+/**
+ * Book a call.
+ *
+ * Two columns and one job each: the left says what the conversation is, the
+ * right books it. That split replaces a page where the scheduler, the agenda,
+ * a four-item "worth bringing" list and an email note all competed for the same
+ * attention — and where an 800px calendar was the first thing anyone met.
+ */
 export default function BookACallPage() {
   return (
-    <>
-      <PageIntro
-        eyebrow="Book a call"
-        heading="Tell us what needs to work."
-        standfirst="A short, practical conversation about the problem you are solving. No pitch deck, no obligation, and an honest answer if we are not the right studio for it."
-        aside={
-          <dl className="mt-8 flex flex-col gap-3">
-            <div className="flex items-baseline gap-3">
-              <dt className="meta w-24 shrink-0 text-muted">Length</dt>
-              {/* TODO_CONTENT: keep in sync with the real Calendly event. */}
-              <dd className="text-sm">{siteConfig.booking.duration}</dd>
-            </div>
-            <div className="flex items-baseline gap-3">
-              <dt className="meta w-24 shrink-0 text-muted">Format</dt>
-              <dd className="text-sm">Video call, or a phone call if you prefer</dd>
-            </div>
-            <div className="flex items-baseline gap-3">
-              <dt className="meta w-24 shrink-0 text-muted">Cost</dt>
-              <dd className="text-sm">None</dd>
-            </div>
-          </dl>
-        }
-      />
+    <div data-nav-theme="dark" className="on-dark grain relative bg-black text-fog">
+      <div className="shell grid-12 gap-y-14 pt-[calc(var(--header-h)+clamp(3rem,7vw,7rem))] pb-[clamp(4rem,8vw,8rem)]">
+        {/* --- what the call is ---------------------------------------- */}
+        <div className="col-span-4 md:col-span-8 lg:col-span-6">
+          <Eyebrow className="text-fog">Book a call</Eyebrow>
+          <RevealText as="h1" immediate className="display-xl mt-7 text-bone">
+            Tell us what needs to work.
+          </RevealText>
 
-      <section
-        data-nav-theme="light"
-        aria-labelledby="booking-widget-heading"
-        className="bg-bone"
-      >
-        <div className="shell grid-12 gap-y-14 py-[clamp(3rem,6vw,6rem)]">
-          <div className="col-span-4 md:col-span-8 lg:col-span-5">
-            <Eyebrow>What we will cover</Eyebrow>
-            <ol className="mt-7 flex flex-col">
+          <Reveal>
+            <p className="prose-body mt-6 max-w-[46ch] text-fog/70">
+              A short, practical conversation about the problem you are solving.
+              No pitch deck, no obligation, and an honest answer if we are not
+              the right studio for it.
+            </p>
+          </Reveal>
+
+          <section aria-labelledby="agenda-heading" className="mt-12">
+            <h2 id="agenda-heading" className="eyebrow text-fog/60">
+              What we will cover
+            </h2>
+            <ol className="mt-6 flex flex-col">
               {AGENDA.map((item, index) => (
                 <li
                   key={item}
-                  className="flex gap-5 border-b border-ink/10 py-4 last:border-b-0"
+                  className="flex gap-5 border-b border-white/10 py-4 last:border-b-0"
                 >
-                  <span className="meta shrink-0 text-muted tabular-nums">
+                  <span className="meta shrink-0 text-fog/40 tabular-nums">
                     0{index + 1}
                   </span>
-                  <span className="prose-body">{item}</span>
+                  <span className="prose-body text-fog/80">{item}</span>
                 </li>
               ))}
             </ol>
+          </section>
 
-            <h2 className="eyebrow mt-14 text-muted">Worth bringing</h2>
-            <Reveal stagger className="mt-6 flex flex-col gap-6">
-              {PREPARE.map((item) => (
-                <div key={item.title}>
-                  <h3 className="display-sm">{item.title}</h3>
-                  <p className="prose-body mt-2 text-muted">{item.body}</p>
-                </div>
-              ))}
-            </Reveal>
-
-            <p className="prose-body mt-12 text-muted">
-              Would rather write than talk? Email{" "}
-              {/* TODO_CONTENT: confirm this inbox is monitored. */}
-              <a
-                href={`mailto:${siteConfig.email}`}
-                className="text-ink underline underline-offset-4"
-              >
-                {siteConfig.email}
-              </a>{" "}
-              with the same information and we will reply with questions.
-            </p>
-          </div>
-
-          <div className="col-span-4 md:col-span-8 lg:col-span-6 lg:col-start-7">
-            <h2 id="booking-widget-heading" className="display-md">
-              Pick a time
-            </h2>
-            <p className="prose-body mt-4 mb-8 text-muted">
-              Choose whatever suits you. If nothing fits, email us and we will
-              find a slot outside these hours.
-            </p>
-            <CalendlyEmbed
-              url={calendlyUrl}
-              fallbackUrl={siteConfig.booking.fallbackUrl}
-            />
-          </div>
+          <p className="prose-body mt-10 max-w-[46ch] text-fog/65">
+            Would rather write than talk? Email{" "}
+            {/* TODO_CONTENT: confirm this inbox is monitored. */}
+            <a
+              href={`mailto:${siteConfig.email}`}
+              className="text-bone underline underline-offset-4"
+            >
+              {siteConfig.email}
+            </a>{" "}
+            with the same information and we will reply with questions.
+          </p>
         </div>
-      </section>
-    </>
+
+        {/* --- booking ------------------------------------------------- */}
+        <section
+          aria-labelledby="booking-heading"
+          className="col-span-4 md:col-span-8 lg:col-span-6 lg:col-start-7"
+        >
+          <h2 id="booking-heading" className="sr-only">
+            Choose a time
+          </h2>
+          {/* TODO_CONTENT: confirm the title and length against the real
+              Calendly event. The card states them because the embed hides
+              Calendly's own event header. */}
+          <BookingPanel
+            url={calendlyUrl}
+            fallbackUrl={siteConfig.booking.fallbackUrl}
+            title={siteConfig.booking.title}
+            duration={siteConfig.booking.duration}
+          />
+        </section>
+      </div>
+    </div>
   );
 }

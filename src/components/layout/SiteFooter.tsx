@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { FooterWordmark } from "@/components/layout/FooterWordmark";
 import { Logo } from "@/components/ui/Logo";
 import { navItems } from "@/content/nav";
 import { siteConfig } from "@/content/site";
@@ -12,7 +13,7 @@ export function SiteFooter() {
   return (
     <footer
       data-nav-theme="dark"
-      className="on-dark grain relative bg-ink text-fog"
+      className="on-dark grain relative border-t border-white/10 bg-black text-fog"
     >
       <div className="shell relative z-10 py-16 md:py-20">
         <div className="grid-12 gap-y-12">
@@ -20,7 +21,7 @@ export function SiteFooter() {
             <Link
               href="/"
               aria-label="Booklee — home"
-              className="w-fit text-[0.95rem] text-bone transition-opacity duration-200 hover:opacity-70"
+              className="w-fit text-bone transition-opacity duration-200 hover:opacity-70"
             >
               <Logo />
             </Link>
@@ -82,11 +83,15 @@ export function SiteFooter() {
           <p className="meta">
             &copy; {year} {siteConfig.legalName}. All rights reserved.
           </p>
-          <p className="meta">
-            {/* TODO_CONTENT: add privacy and terms links once those pages exist. */}
-            {siteConfig.location}
-          </p>
+          {/* TODO_CONTENT: add privacy and terms links once those pages exist.
+              They belong on this row, which is why it keeps its justification
+              now that the location line has been removed from it. */}
         </div>
+
+        {/* The wordmark is the last thing on the page, below the legal line
+            rather than above it, so the footer's own content finishes and the
+            mark signs off underneath it. */}
+        <FooterWordmark className="mt-12 md:mt-16" />
       </div>
     </footer>
   );

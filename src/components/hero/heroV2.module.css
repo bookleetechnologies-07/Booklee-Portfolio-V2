@@ -1,0 +1,1212 @@
+/*
+ * BookleeHeroV2 — the living website canvas.
+ *
+ * One markup tree, two layouts. Below 768px, or under `prefers-reduced-motion`,
+ * everything here is ordinary document flow: a headline, two calls to action,
+ * and the four views stacked as readable cards. At 768px and above, with motion
+ * allowed, the same tree becomes layers of a pinned cinematic scene and the
+ * GSAP timeline takes over.
+ *
+ * The split is expressed in media queries rather than in JavaScript, exactly as
+ * the laptop hero's stylesheet did and for the same reason: every state that
+ * has to be correct before hydration is already correct at first paint, so a
+ * cold load can never flash the wrong thing. In particular `.view` is stacked
+ * and clipped from the very first frame in the cinematic branch, so no preview
+ * can be seen before the timeline reaches it.
+ *
+ * The cinematic gate is written out in full each time rather than nested,
+ * because it must stay character-for-character identical to the query
+ * `useMotionMode` tests. If the two ever drift, the JS and the CSS disagree
+ * about which layout is on screen, which is the single most expensive bug this
+ * component can have.
+ */
+
+.scene {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  background-color: #000000;
+  color: var(--color-fog);
+
+  /*
+   * Motion amplitudes, in one place.
+   *
+   * The timeline reads these off the scene with `getComputedStyle` rather than
+   * hard-coding degrees, so the tablet branch below flattens the whole
+   * animation by changing seven numbers instead of forking the timeline.
+   */
+  --hero-perspective: 1800px;
+  --hero-rx-rest: 11;
+  --hero-ry-rest: -13;
+  --hero-rx-near: 2;
+  --hero-ry-near: -1.5;
+  /*
+   * Note the resting scale came *down* when the frame's own width went up.
+   * The two are set against each other on purpose: what the canvas must not do
+   * is grow at rest, where it would start competing with the headline again —
+   * the point of the larger frame is a larger *arrival*. At rest the canvas is
+   * about the size it always was; by the time it settles it is roughly a tenth
+   * bigger than before, which is where the extra presence was wanted.
+   */
+  --hero-scale-rest: 0.58;
+  /*
+   * Trimmed from 25 when the frame grew: at the larger size the resting canvas
+   * reached far enough down the screen that its bottom edge ran under the calls
+   * to action. It clears them by about a dozen pixels now, and clears the
+   * headline above it by about as much.
+   */
+  --hero-lift-rest: 22;
+  --hero-shift-rest: 22;
+  --hero-veil-rest: 0.72;
+}
+
+@media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
+  .scene {
+    height: 100vh;
+  }
+}
+
+/* Tablet: the same choreography, materially flatter. A wider perspective and
+   smaller angles keep the view legible at a size where a hard three-quarter
+   tilt costs more readability than it buys depth. */
+@media (min-width: 768px) and (max-width: 1023.98px) and (prefers-reduced-motion: no-preference) {
+  .scene {
+    --hero-perspective: 2800px;
+    --hero-rx-rest: 6;
+    --hero-ry-rest: -7;
+    --hero-rx-near: 1;
+    --hero-ry-near: -0.5;
+    /* A tablet has far less width to move the canvas sideways into, so it
+       clears the copy by dropping rather than by shifting right. */
+    --hero-scale-rest: 0.68;
+    --hero-lift-rest: 34;
+    --hero-shift-rest: 4;
+    --hero-veil-rest: 0.72;
+  }
+
+}
+
+/* ------------------------------------------------------------------ *
+ * Atmosphere — a dark room with one light in it.
+ *
+ * The light enters from the left edge, a little above the middle, and crosses
+ * the scene as a single slightly-diagonal shaft. Cool blue-grey mist hangs in
+ * its path and catches it; everything to the right of the shaft falls back to
+ * true black. The middle of the frame is deliberately the *dimmest* part of the
+ * lit region, because the canvas and the headline live there and have to stay
+ * readable — the beam is weather behind them, never a spotlight on them.
+ *
+ * All of it is composited CSS: two pseudo-elements for the room and the beam,
+ * two drifting mist banks, a masked point grid and a directional vignette.
+ * There is no second WebGL context and no particle system, and nothing here
+ * uses `filter` — the softness is in the gradient stops, not in a
+ * full-viewport blur, because a full-viewport filter is exactly what stops a
+ * pinned scene holding sixty frames on a laptop GPU. Nothing below repaints per
+ * frame; the only animation any of it carries is the pre-existing slow drift on
+ * the two mist layers.
+ * ------------------------------------------------------------------ */
+
+.atmosphere {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+/*
+ * The room. A charcoal lift that only exists on the left, so the wall the light
+ * comes through sits a shade above black while the right of the scene stays at
+ * zero. This is what gives the void a direction before the beam is drawn at
+ * all: without it the shaft reads as a decal on flat black rather than as light
+ * arriving from somewhere.
+ */
+.atmosphere::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      112% 96% at -12% 34%,
+      rgb(150 178 210 / 0.11) 0%,
+      rgb(96 122 152 / 0.05) 32%,
+      transparent 66%
+    ),
+    linear-gradient(
+      102deg,
+      rgb(26 32 40 / 0.92) 0%,
+      rgb(14 18 24 / 0.6) 30%,
+      rgb(6 8 11 / 0.24) 56%,
+      transparent 78%
+    );
+}
+
+/*
+ * The beam. One rotated shaft: soft across its width by the gradient stops, and
+ * faded along its length by a mask so it is brightest in the first third and
+ * effectively gone before the right edge. The mask is the readability control —
+ * by the horizontal middle of the scene it is down to about half, which is why
+ * the canvas keeps a dark backdrop even though the shaft passes behind it.
+ */
+.atmosphere::after {
+  content: "";
+  position: absolute;
+  left: -18%;
+  top: 6%;
+  width: 150%;
+  height: 74%;
+  transform: rotate(6deg);
+  transform-origin: 0% 50%;
+  mix-blend-mode: screen;
+  background:
+    /* the core: narrow, and the only part that reads as an edge */
+    linear-gradient(
+      to bottom,
+      transparent 38%,
+      rgb(206 226 250 / 0.2) 50%,
+      transparent 62%
+    ),
+    /* the shaft the core sits in: wide, and almost all falloff */
+    linear-gradient(
+      to bottom,
+      transparent 4%,
+      rgb(146 176 208 / 0.055) 30%,
+      rgb(178 202 230 / 0.1) 50%,
+      rgb(146 176 208 / 0.055) 70%,
+      transparent 96%
+    );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    rgb(0 0 0 / 0.9) 10%,
+    #000 22%,
+    rgb(0 0 0 / 0.5) 48%,
+    rgb(0 0 0 / 0.16) 70%,
+    transparent 88%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    rgb(0 0 0 / 0.9) 10%,
+    #000 22%,
+    rgb(0 0 0 / 0.5) 48%,
+    rgb(0 0 0 / 0.16) 70%,
+    transparent 88%
+  );
+}
+
+/*
+ * The mist. Two banks, screen-blended so they can only ever add light, drifting
+ * on the pre-existing ambient tween — which moves them on `transform` alone, so
+ * neither of them is given one here.
+ */
+.haze {
+  position: absolute;
+  border-radius: 999em;
+  mix-blend-mode: screen;
+  will-change: transform;
+}
+
+/* Upstream: the dense bank the beam passes through as it enters. */
+.hazeA {
+  inset: 8% 34% 30% -28%;
+  background: radial-gradient(
+    50% 50% at 40% 46%,
+    rgb(178 202 230 / 0.12) 0%,
+    rgb(122 150 184 / 0.045) 44%,
+    transparent 72%
+  );
+}
+
+/* Downstream: thinner, cooler, and low, where the shaft has spent itself. */
+.hazeB {
+  inset: 46% 4% -16% 10%;
+  background: radial-gradient(
+    50% 50% at 46% 40%,
+    rgb(126 152 184 / 0.08) 0%,
+    rgb(96 120 150 / 0.03) 46%,
+    transparent 70%
+  );
+}
+
+/*
+ * The point grid, now read as motes in the mist rather than as a technical
+ * texture: cooled to the same blue-grey as the beam, dimmed, and its mask
+ * pushed left so the points are only visible where there is light to catch. One
+ * repeating radial gradient, masked to a soft ellipse so it never reaches an
+ * edge and never reads as a texture tile. It drifts, slowly, on a transform —
+ * never on `background-position`, which would repaint the whole layer every
+ * frame.
+ */
+.grid {
+  position: absolute;
+  inset: -8%;
+  background-image: radial-gradient(
+    circle at center,
+    rgb(196 214 238 / 0.13) 0.5px,
+    transparent 0.5px
+  );
+  background-size: 46px 46px;
+  -webkit-mask-image: radial-gradient(
+    56% 50% at 40% 46%,
+    #000 0%,
+    transparent 76%
+  );
+  mask-image: radial-gradient(56% 50% at 40% 46%, #000 0%, transparent 76%);
+  opacity: 0.34;
+  will-change: transform;
+}
+
+/*
+ * The light the canvas appears to throw into the room. One cheap radial,
+ * screen-blended so it only ever adds light to the black; the timeline drives
+ * its opacity alongside the frame's own edge, so the glow and the thing casting
+ * it arrive together.
+ */
+.bloom {
+  position: absolute;
+  inset: -12%;
+  z-index: 2;
+  opacity: 0;
+  mix-blend-mode: screen;
+  background: radial-gradient(
+    46% 38% at 50% 50%,
+    rgb(250 250 247 / 0.16) 0%,
+    rgb(191 217 242 / 0.05) 40%,
+    transparent 72%
+  );
+}
+
+/*
+ * The vignette closes the corners as it always did, and now also pulls the side
+ * away from the light down to black — which is what keeps the beam directional
+ * instead of leaving the scene evenly lifted from edge to edge.
+ */
+.vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      94deg,
+      transparent 40%,
+      rgb(0 0 0 / 0.3) 76%,
+      rgb(0 0 0 / 0.5) 100%
+    ),
+    radial-gradient(
+      118% 84% at 50% 48%,
+      transparent 40%,
+      rgb(0 0 0 / 0.82) 100%
+    );
+}
+
+/* ------------------------------------------------------------------ *
+ * Layout
+ * ------------------------------------------------------------------ */
+
+/*
+ * Small screens: a real flex column in document flow. In the cinematic branch
+ * it dissolves with `display: contents` and its children become absolutely
+ * positioned layers of the pinned scene — one tree, two layouts, nothing
+ * conditionally rendered.
+ */
+.layout {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+  padding-block: calc(var(--header-h) + 2.25rem) 3.5rem;
+}
+
+@media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
+  .layout {
+    display: contents;
+  }
+}
+
+/* --- outer copy ------------------------------------------------------- */
+
+.copy {
+  position: relative;
+  z-index: 6;
+}
+
+@media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
+  .copy {
+    position: absolute;
+    inset: 0;
+    /*
+     * Below the canvas, not above it.
+     *
+     * This was the whole of the "two layers coexisting by accident" problem:
+     * the headline was painted over the frame, so a bright white sentence sat
+     * on top of the window instead of the window covering it. The frame's own
+     * background is opaque, so once the order is this way round the incoming
+     * window occludes whatever copy it reaches — the takeover is a fact of the
+     * paint order rather than something the fade has to fake.
+     */
+    z-index: 2;
+    display: flex;
+    align-items: flex-start;
+    padding-top: max(12vh, calc(var(--header-h) + 3.5vh));
+    /* The copy is a layer over the scene; only its actual text should be
+       hittable, so the layer lets clicks through and the inner block takes
+       them back. */
+    pointer-events: none;
+  }
+}
+
+.copyInner {
+  pointer-events: auto;
+}
+
+/*
+ * The supporting sentence is set as three deliberate lines rather than left to
+ * wrap. Wrapped, "starter systems," landed on the same line as the clause
+ * before it and ran straight into the resting canvas; broken here, each clause
+ * ends where it should and the whole block stays inside the column the canvas
+ * leaves for it.
+ */
+.supportLine {
+  display: block;
+}
+
+/*
+ * The calls to action.
+ *
+ * On the cinematic path these are pulled out of the copy block and parked at
+ * the bottom of the scene, where they stay visible and clickable for the entire
+ * hero. The headline above them fades out once the canvas has taken over — it
+ * has been read by then — but the two destinations never do. A pinned hero that
+ * hides the only way out of itself is a hero that traps people.
+ */
+.ctaRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+@media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
+  .ctaRow {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: clamp(1.75rem, 4vh, 2.75rem);
+    z-index: 7;
+    justify-content: center;
+  }
+}
+
+.ctaPrimary,
+.ctaSecondary {
+  display: inline-flex;
+  height: 3rem;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 999em;
+  padding-inline: 1.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition:
+    transform 200ms var(--ease-out-quint),
+    border-color 200ms linear;
+}
+
+.ctaPrimary {
+  background: var(--color-bone);
+  color: var(--color-ink);
+}
+
+.ctaSecondary {
+  border: 1px solid var(--rule-strong);
+  color: var(--color-bone);
+}
+
+.ctaPrimary:hover,
+.ctaSecondary:hover {
+  transform: translateY(-2px);
+}
+
+.ctaSecondary:hover {
+  border-color: var(--color-bone);
+}
+
+/* --- progress rail ---------------------------------------------------- */
+
+/*
+ * Hidden on the stacked path, where every view is on screen at once and a
+ * progress indicator would be describing a sequence that is not happening.
+ */
+.progress {
+  display: none;
+}
+
+/*
+ * The rail appears from 1024px, not 768px.
+ *
+ * It shares the foot of the scene with the calls to action, and on a tablet the
+ * centred CTA row reaches far enough across that the two overlap — the rail was
+ * printing straight through "View portfolio". The calls to action have to stay
+ * legible at every width; the rail is an orientation aid and is the one that
+ * gives way.
+ */
+@media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
+  .progress {
+    position: absolute;
+    right: clamp(1.25rem, 3vw, 2.5rem);
+    bottom: clamp(1.75rem, 4vh, 2.75rem);
+    z-index: 7;
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    opacity: 0;
+    pointer-events: none;
+    color: var(--color-fog);
+  }
+}
+
+.progressTicks {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.tick {
+  display: block;
+  width: 1.35rem;
+  height: 1px;
+  background: rgb(250 250 247 / 0.24);
+  transition: background-color 320ms linear;
+}
+
+.tickOn {
+  background: var(--color-bone);
+}
+
+.progressLabel {
+  min-width: 9ch;
+  color: rgb(250 250 247 / 0.72);
+}
+
+/* --- the closing signpost --------------------------------------------- */
+
+.handoff {
+  display: none;
+}
+
+@media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
+  .handoff {
+    position: absolute;
+    left: 50%;
+    bottom: clamp(5.5rem, 11vh, 7.5rem);
+    z-index: 7;
+    display: block;
+    transform: translateX(-50%);
+    opacity: 0;
+    pointer-events: none;
+    color: rgb(217 217 213 / 0.55);
+    white-space: nowrap;
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * The floating canvas
+ * ------------------------------------------------------------------ */
+
+/*
+ * On the stacked path the frame column is capped rather than filling the shell.
+ * A reduced-motion visitor on a 1440px display would otherwise get four
+ * previews over 1300px wide stacked down the page, each one taller than the
+ * viewport — legible, but an absurd amount of scrolling for what is meant to be
+ * the calm version of the hero.
+ */
+.stageWrap {
+  position: relative;
+  z-index: 3;
+  width: 100%;
+  max-width: 52rem;
+}
+
+@media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
+  .stageWrap {
+    position: absolute;
+    inset: 0;
+    max-width: none;
+    /* Above the copy (2) and below the calls to action and rails (7). */
+    z-index: 6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    perspective: var(--hero-perspective);
+    perspective-origin: 50% 46%;
+  }
+}
+
+/*
+ * Pointer parallax lives on its own element.
+ *
+ * The stage inside it is owned by GSAP and written to on every scrubbed frame;
+ * the parallax is a damped rAF loop on a different cadence. Two writers on one
+ * element's transform is a fight neither wins — separating them is the one
+ * structural idea worth taking wholesale from the reference animation.
+ */
+.parallax {
+  display: contents;
+}
+
+.stage {
+  position: relative;
+}
+
+@media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
+  .parallax {
+    display: block;
+    transform-style: preserve-3d;
+    will-change: transform;
+  }
+
+  .stage {
+    transform-style: preserve-3d;
+    will-change: transform;
+  }
+}
+
+/*
+ * The frame.
+ *
+ * On the stacked path it is a transparent passthrough: the browser chrome and
+ * the glowing edge belong to the cinematic object, and repeating a chrome bar
+ * above four phone-sized cards would be decoration pretending to be interface.
+ *
+ * In the cinematic branch it becomes the object itself, sized off the smaller
+ * of the viewport's two axes — `92vh` inside a `min()` for *width* is
+ * deliberate — so the canvas is never taller than the room it stands in. At
+ * 16/10 that caps its height at 57.5vh, which leaves the headline space above
+ * and the calls to action space below on every desktop aspect ratio, including
+ * the short ones.
+ */
+.frame {
+  position: relative;
+
+  /*
+   * The canvas is a *picture* of a website, not a document. Its nav items,
+   * headlines and address bar are drawn text because drawing them stays sharp
+   * at every size a bitmap would not — but nobody is meant to read them as
+   * copy, and nothing in here is worth selecting.
+   *
+   * Left selectable they behave badly in exactly this scene: the hero is
+   * pinned, so the canvas sits still under a pointer that is being dragged or
+   * double-clicked to scroll, a word like the nav's "About" gets caught by the
+   * selection, and the global `::selection` butter yellow then sits behind it
+   * for the whole length of the animation looking like a design decision. This
+   * is the fix for that, and it is deliberately on the frame rather than on the
+   * one word it was noticed on, because every other label in the canvas can be
+   * caught the same way.
+   *
+   * Selection only — the text stays in the DOM, still has its real contrast,
+   * and is still read by assistive technology.
+   */
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+@media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
+  .frame {
+    width: min(80vw, 116vh, 1280px);
+    aspect-ratio: 16 / 10;
+    border-radius: 10px;
+    background: #08080a;
+    overflow: hidden;
+    isolation: isolate;
+    box-shadow:
+      0 40px 120px -40px rgb(0 0 0 / 0.9),
+      0 0 60px -20px rgb(191 217 242 / 0.14);
+  }
+}
+
+/*
+ * A tablet is usually held tall, so the canvas is width-limited rather than
+ * height-limited and can take a larger share of the screen without crowding the
+ * header above it or the calls to action below.
+ *
+ * This block has to come *after* the rule above, not beside the tablet custom
+ * properties near the top of the file: both selectors are a single class inside
+ * a media query, so they have identical specificity and the later one wins.
+ */
+@media (min-width: 768px) and (max-width: 1023.98px) and (prefers-reduced-motion: no-preference) {
+  .frame {
+    width: min(90vw, 116vh, 1000px);
+  }
+}
+
+/*
+ * The veil.
+ *
+ * At rest the canvas has to read as further away and not yet the subject, and
+ * it used to do that by being semi-transparent. It cannot any more: it is now
+ * the top layer, and a translucent top layer shows the headline straight
+ * through the window, which looks like a double exposure rather than depth.
+ *
+ * So the frame itself stays fully opaque and this scrim, *inside* it, dims the
+ * page it is showing instead. The timeline lifts it across the approach. The
+ * occlusion is therefore constant while the sense of arrival is animated,
+ * which is the right way round.
+ */
+.frameVeil {
+  display: none;
+}
+
+@media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
+  .frameVeil {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    display: block;
+    background: #050506;
+    pointer-events: none;
+  }
+}
+
+/*
+ * The spectral edge: a one-pixel conic ring, drawn with a mask rather than a
+ * border so it can be a gradient at all, and rotated through a registered
+ * custom property so the browser interpolates an angle instead of script
+ * re-declaring a gradient sixty times a second.
+ */
+@property --hero-edge-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+.frameEdge {
+  display: none;
+}
+
+@media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
+  .frameEdge {
+    position: absolute;
+    inset: 0;
+    z-index: 6;
+    display: block;
+    border-radius: inherit;
+    padding: 1px;
+    background: conic-gradient(
+      from var(--hero-edge-angle),
+      rgb(220 204 244 / 0.85),
+      rgb(191 217 242 / 0.9),
+      rgb(250 250 247 / 0.95),
+      rgb(203 239 174 / 0.75),
+      rgb(220 204 244 / 0.85)
+    );
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    pointer-events: none;
+    opacity: 0.35;
+    animation: heroEdgeSpin 9s linear infinite;
+  }
+}
+
+@keyframes heroEdgeSpin {
+  to {
+    --hero-edge-angle: 360deg;
+  }
+}
+
+/* --- browser chrome ---------------------------------------------------- */
+
+.chrome {
+  display: none;
+}
+
+@media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
+  .chrome {
+    position: relative;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    gap: 0.75em;
+    height: 4.6%;
+    min-height: 22px;
+    padding-inline: 1.1%;
+    border-bottom: 1px solid rgb(250 250 247 / 0.08);
+    background: #0b0b0d;
+    font-size: clamp(0.5rem, 0.72vw, 0.6875rem);
+  }
+}
+
+.chromeDots {
+  display: flex;
+  gap: 0.4em;
+}
+
+.chromeDot {
+  width: 0.45em;
+  height: 0.45em;
+  border-radius: 999em;
+  background: rgb(250 250 247 / 0.22);
+}
+
+.chromeAddress {
+  flex: 1;
+  overflow: hidden;
+  color: rgb(217 217 213 / 0.62);
+  letter-spacing: 0.14em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* --- the views --------------------------------------------------------- */
+
+.viewport {
+  position: relative;
+}
+
+@media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
+  .viewport {
+    height: calc(100% - max(4.6%, 22px));
+    overflow: hidden;
+    background: #050506;
+  }
+}
+
+/*
+ * Stacked path: the views are a readable vertical list, each one its own card
+ * with a real heading above a decorative preview. Nothing is clipped, nothing
+ * is hidden, and no information depends on an animation having run.
+ */
+.viewList {
+  display: flex;
+  flex-direction: column;
+  gap: 2.25rem;
+}
+
+.view {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+@media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
+  .viewList {
+    display: block;
+    height: 100%;
+  }
+
+  .view {
+    position: absolute;
+    inset: 0;
+    display: block;
+    height: 100%;
+  }
+
+  /*
+   * Every view but the first is hidden in CSS, not by JavaScript.
+   *
+   * This is the single declaration that guarantees a cold load cannot show the
+   * last view stacked on top of the first. It is true at first paint, before
+   * React has hydrated and before the timeline has set anything; the timeline's
+   * layout effect then makes them visible and clips them instead. Without it
+   * the hero flashes its fourth view for however long hydration takes, which is
+   * exactly the bug the laptop hero's stylesheet was written to prevent.
+   */
+  .view + .view {
+    visibility: hidden;
+  }
+}
+
+/*
+ * The stacked card's heading.
+ *
+ * This is where the view's headline lives as real, selectable, screen-readable
+ * text on the path where the canvas below it is only a thumbnail. The cinematic
+ * path names the view on the progress rail instead, so this is removed from the
+ * layout there rather than merely painted over.
+ */
+.viewHead {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.viewHeadMeta {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  white-space: nowrap;
+  color: rgb(217 217 213 / 0.55);
+}
+
+/*
+ * The route, kept as written rather than shouted.
+ *
+ * It inherits `.eyebrow`, which upper-cases and letter-spaces its text — fine
+ * for a two-word label, ruinous for `/services/starter-websites`, which at 390px
+ * wrapped onto a second line and pushed the label it sits beside onto one too.
+ * Overriding both here keeps the path on one line at every width the stacked
+ * card is read at.
+ */
+.viewHeadPath {
+  margin-left: auto;
+  overflow: hidden;
+  font-size: 0.625rem;
+  letter-spacing: 0.06em;
+  text-transform: none;
+  text-overflow: ellipsis;
+  color: rgb(217 217 213 / 0.38);
+}
+
+@media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
+  .viewHead {
+    display: none;
+  }
+}
+
+/*
+ * Every view is drawn in `em`, and 1em is exactly 1% of the canvas's width.
+ * That is the same container-query technique `preview.module.css` uses, and it
+ * is why one set of numbers serves a 1120px pinned canvas and a 340px phone
+ * card with no resize observer, no JavaScript and no bitmap.
+ */
+.canvas {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  container-type: inline-size;
+  overflow: hidden;
+  border: 1px solid rgb(250 250 247 / 0.12);
+  border-radius: 8px;
+}
+
+@media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
+  .canvas {
+    position: absolute;
+    inset: 0;
+    width: auto;
+    height: 100%;
+    aspect-ratio: auto;
+    border: 0;
+    border-radius: 0;
+  }
+}
+
+.canvasInner {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  font-size: 1cqw;
+  line-height: 1.35;
+  color: var(--color-bone);
+  background: #050506;
+}
+
+/* Below this width the view is a thumbnail rather than a page: the type grows
+   and the densest columns step aside, exactly as the concept previews do. */
+@container (max-width: 520px) {
+  .canvasInner {
+    font-size: 1.5cqw;
+  }
+
+  .dense {
+    display: none !important;
+  }
+}
+
+/* Eyebrow and headline as one block, so the gap between them is expressed in
+   the canvas's own em rather than in a unit that would drift with the type. */
+.viewIntro {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2em;
+}
+
+.viewHeadline {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 5.4em;
+  line-height: 0.94;
+  letter-spacing: -0.015em;
+  max-width: 15ch;
+}
+
+.viewEyebrow {
+  font-size: 1.5em;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgb(217 217 213 / 0.5);
+}
+
+.viewSupport {
+  font-size: 2em;
+  line-height: 1.5;
+  max-width: 34ch;
+  color: rgb(217 217 213 / 0.72);
+}
+
+/* --- view 01 · business site ------------------------------------------- */
+
+.landing {
+  justify-content: space-between;
+  padding: 5em 6em;
+  background:
+    radial-gradient(70% 90% at 78% 6%, rgb(191 217 242 / 0.1) 0%, transparent 60%),
+    #050506;
+}
+
+.landingNav {
+  display: flex;
+  align-items: center;
+  gap: 2.4em;
+  font-size: 1.5em;
+  color: rgb(217 217 213 / 0.55);
+}
+
+.landingBrand {
+  margin-right: auto;
+  color: var(--color-bone);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.landingSplit {
+  display: flex;
+  align-items: center;
+  gap: 6em;
+  flex: 1;
+  min-height: 0;
+}
+
+.landingBody {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 1.8em;
+  flex: 1;
+  min-height: 0;
+}
+
+.landingIndex {
+  display: flex;
+  flex-direction: column;
+  width: 26%;
+  gap: 0.9em;
+  padding-bottom: 0.6em;
+}
+
+.landingIndexRow {
+  display: flex;
+  align-items: baseline;
+  gap: 1.1em;
+  border-top: 1px solid rgb(250 250 247 / 0.1);
+  padding-top: 0.9em;
+  font-size: 1.45em;
+  color: rgb(217 217 213 / 0.62);
+}
+
+.landingIndexNum {
+  color: rgb(217 217 213 / 0.35);
+  font-variant-numeric: tabular-nums;
+}
+
+.landingCta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6em;
+  border-radius: 999em;
+  background: var(--color-bone);
+  padding: 0.85em 1.6em;
+  font-size: 1.6em;
+  font-weight: 500;
+  color: var(--color-ink);
+}
+
+/* --- view 02 · starter systems ----------------------------------------- */
+
+.starters {
+  gap: 3.2em;
+  padding: 5em 6em;
+}
+
+.starterGrid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  align-content: center;
+  gap: 1.4em;
+  flex: 1;
+  min-height: 0;
+}
+
+.starterCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9em;
+  border: 1px solid rgb(250 250 247 / 0.1);
+  /* Square-ish, not a bubble. */
+  border-radius: 3px;
+  padding: 2.2em 1.6em;
+  background: linear-gradient(
+    180deg,
+    rgb(250 250 247 / 0.04) 0%,
+    rgb(250 250 247 / 0.01) 100%
+  );
+}
+
+.starterIndex {
+  font-size: 1.3em;
+  letter-spacing: 0.16em;
+  color: rgb(217 217 213 / 0.4);
+  font-variant-numeric: tabular-nums;
+}
+
+.starterName {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 3em;
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+
+.starterAccent {
+  width: 2.4em;
+  height: 2px;
+  background: var(--starter-accent);
+}
+
+.starterTags {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35em;
+  font-size: 1.3em;
+  color: rgb(217 217 213 / 0.55);
+}
+
+/* --- view 03 · client work --------------------------------------------- */
+
+.clients {
+  gap: 2.8em;
+  padding: 5em 6em;
+}
+
+.clientGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.8em;
+  flex: 1;
+  min-height: 0;
+}
+
+.clientCard {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1em;
+  min-height: 0;
+}
+
+.clientPlate {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: 3px;
+  border: 1px solid rgb(250 250 247 / 0.1);
+  background: #0b0b0d;
+}
+
+.clientMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25em;
+  font-size: 1.4em;
+}
+
+.clientName {
+  font-weight: 600;
+  color: var(--color-bone);
+}
+
+.clientCategory {
+  color: rgb(217 217 213 / 0.45);
+}
+
+/* --- view 04 · process -------------------------------------------------- */
+
+.process {
+  gap: 3.2em;
+  padding: 5em 6em;
+}
+
+.processRow {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  /*
+   * The columns stretch rather than shrink-wrapping their text, so the hairline
+   * down the left of each stage runs the full height of the frame. That is what
+   * turns the space below the notes into structure instead of a blank half — a
+   * page of five columns, rather than a row of five labels floating in a void.
+   */
+  align-items: stretch;
+  flex: 1;
+  min-height: 0;
+  gap: 1.4em;
+  border-top: 1px solid rgb(250 250 247 / 0.12);
+  padding-top: 2em;
+}
+
+.processStep {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7em;
+  border-left: 1px solid rgb(250 250 247 / 0.08);
+  padding-left: 1.3em;
+}
+
+/* The connector between stages: a caret sitting on the rule above the row,
+   drawn from two borders rather than as a glyph so it stays aligned with that
+   rule at any size the frame is drawn at. */
+.processStep:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: -2.32em;
+  right: -0.75em;
+  width: 0.45em;
+  height: 0.45em;
+  border-top: 1px solid rgb(250 250 247 / 0.45);
+  border-right: 1px solid rgb(250 250 247 / 0.45);
+  transform: rotate(45deg);
+}
+
+.processIndex {
+  font-size: 1.3em;
+  letter-spacing: 0.16em;
+  color: rgb(217 217 213 / 0.4);
+  font-variant-numeric: tabular-nums;
+}
+
+.processName {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 3.2em;
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+
+.processNote {
+  font-size: 1.35em;
+  line-height: 1.45;
+  color: rgb(217 217 213 / 0.55);
+  max-width: 16ch;
+}

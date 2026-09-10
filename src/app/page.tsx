@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 
 import { AboutSplit } from "@/components/home/AboutSplit";
 import { BookingCTA } from "@/components/home/BookingCTA";
-import { LaptopStory } from "@/components/home/LaptopStory";
-import { ProjectRail } from "@/components/home/ProjectRail";
+import { BookleeHeroV2 } from "@/components/hero/BookleeHeroV2";
+import { StarterRail } from "@/components/home/StarterRail";
 import { ServicesGrid } from "@/components/home/ServicesGrid";
 import { StackMarquee } from "@/components/home/StackMarquee";
 import { TestimonialsCarousel } from "@/components/home/TestimonialsCarousel";
@@ -18,8 +18,8 @@ export const metadata: Metadata = {
 export default function HomePage() {
   return (
     <>
-      <LaptopStory />
-      <ProjectRail />
+      <BookleeHeroV2 />
+      <StarterRail />
       <StackMarquee />
       <ServicesGrid />
       <AboutSplit />

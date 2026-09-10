@@ -1,4 +1,6 @@
-import type { AccentToken, ProjectSlug } from "@/content/projects";
+import type { Route } from "next";
+
+import type { AccentToken, StarterSlug } from "@/content/starter-websites";
 
 export type Service = {
   slug: string;
@@ -13,80 +15,124 @@ export type Service = {
   deliverables: string[];
   /** What changes from client to client. */
   tailoring: string;
-  /** Concept projects that show this service in use. */
-  related: ProjectSlug[];
+  /**
+   * A real secondary destination for this service. Only Web Development has
+   * one today — the starter websites entry point the brief asks for — and it
+   * is typed as a route so a broken link fails the build rather than the page.
+   */
+  secondary?: { label: string; href: Route };
+  /** Starter foundations that show this service in use. */
+  related: StarterSlug[];
 };
 
+/**
+ * Booklee's six offerings, in the order they are presented everywhere.
+ *
+ * Web Development leads, because it is the work most people arrive looking for
+ * and it is the route into the starter websites. The optimisation copy
+ * deliberately avoids promising rankings, views or follower growth — those are
+ * not ours to guarantee, and a services page that implies otherwise is the
+ * fastest way to start a project badly.
+ */
 export const services: Service[] = [
   {
-    slug: "discovery-product-strategy",
+    slug: "web-development",
     index: "01",
-    title: "Discovery & Product Strategy",
+    title: "Web Development",
     summary:
-      "Work out what should be built, in what order, before anyone writes code.",
-    accent: "lilac",
-    problem:
-      "There is a clear sense that something needs to change, and a long list of features that may or may not address it. Building the list is expensive and usually answers the wrong question.",
-    deliverables: [
-      "Stakeholder and user conversations, written up rather than summarised into slides",
-      "A map of the current workflow, including the parts that happen outside any software",
-      "A prioritised scope with an explicit first release and an explicit not-yet list",
-      "Estimated effort per area, with the assumptions that estimate depends on",
-    ],
-    tailoring:
-      "Depth scales with risk. A marketing site needs a short session; an operations platform that touches money needs weeks and a written process map.",
-    related: ["crm", "erp"],
-  },
-  {
-    slug: "ui-ux-visual-systems",
-    index: "02",
-    title: "UI/UX & Visual Systems",
-    summary:
-      "Interface design and a design system that survives contact with real content.",
-    accent: "blue",
-    problem:
-      "Screens exist, but they were designed one at a time. Nothing quite matches, every new feature invents a new pattern, and the result feels harder to use than it is.",
-    deliverables: [
-      "Interaction design for the core flows, at the fidelity the decision requires",
-      "A component and token set — type scale, spacing, colour, states — implemented, not just drawn",
-      "Accessibility built into the components: focus, contrast, keyboard paths, touch targets",
-      "Documentation of the rules, so the next person makes consistent decisions",
-    ],
-    tailoring:
-      "A brand-led marketing site is art-directed page by page. A product is systematised, because consistency there is a usability feature rather than a preference.",
-    related: ["portfolio", "hrm"],
-  },
-  {
-    slug: "website-design-development",
-    index: "03",
-    title: "Website Design & Development",
-    summary:
-      "Marketing sites that are fast, findable and genuinely designed for their audience.",
+      "Tailored websites that express the brand clearly and work properly across every screen.",
     accent: "yellow",
     problem:
-      "The current site was built from a theme, loads slowly, and says the same thing as every competitor. Editing it is unpleasant enough that it has not been edited in a year.",
+      "The current site came from a theme. It loads slowly, says roughly what every competitor says, and editing it is unpleasant enough that it has not been touched in a year.",
     deliverables: [
-      "Art direction, content structure and copy support for the pages that matter",
-      "A built site with per-page metadata, structured data, sitemap and share previews",
-      "An image pipeline and performance budget, tested on a mid-range phone",
-      "A content model the client can actually edit, or static content if they would rather not",
+      "Custom websites: portfolio, marketing, travel, e-commerce and content-led experiences",
+      "Art direction and content structure for the pages that actually matter",
+      "Responsive implementation with accessibility and performance treated as part of done",
+      "Conversion-minded build: the path to enquiry or purchase designed, not assumed",
+      "Per-page metadata, structured data, sitemap and share previews",
+      "A content model the client can edit — or static content, if they would rather not",
     ],
     tailoring:
       "Scope follows how often the site changes. Rarely-edited sites stay static and cheap to host; frequently-edited ones get an editing workflow before they get a CMS.",
-    related: ["portfolio", "travel"],
+    secondary: {
+      label: "Explore starter websites",
+      href: "/services/starter-websites",
+    },
+    related: ["crm"],
   },
   {
-    slug: "web-applications-internal-tools",
-    index: "04",
-    title: "Web Applications & Internal Tools",
+    slug: "marketing",
+    index: "02",
+    title: "Marketing",
     summary:
-      "The system that replaces the spreadsheet the business is quietly run on.",
+      "Marketing shaped around the audience—whether you are growing a company, a product, or a creator-led brand.",
+    accent: "lilac",
+    problem:
+      "There is something worth talking about, but the message changes depending on who is writing it and the channels are being fed rather than chosen. Effort goes out; very little comes back in a form you can read.",
+    deliverables: [
+      "Positioning and messaging that survives being said out loud by different people",
+      "Campaign planning with a stated objective per campaign, not just a calendar",
+      "Content direction — formats, cadence and tone, for company and creator-led brands alike",
+      "Channel strategy: which platforms are worth your time, and which are not",
+      "Audience growth work that is measured against something specific",
+    ],
+    tailoring:
+      "A product business and a creator-led brand need different rhythms. What stays constant is that we agree what a campaign is for before it runs, and how we will know whether it worked.",
+    related: [],
+  },
+  {
+    slug: "seo-optimisation",
+    index: "03",
+    title: "SEO & Optimisation",
+    summary:
+      "Search, platform, content, and performance optimisation across websites, software, Instagram, and YouTube.",
+    accent: "blue",
+    problem:
+      "The work is good and nobody is finding it. Pages are slow, titles were written once and never revisited, and the platform-specific fundamentals — the things each platform actually rewards — were never set up.",
+    deliverables: [
+      "Technical site audit: crawlability, structured data, metadata, internal linking, Core Web Vitals",
+      "Content and keyword work grounded in what you can credibly rank for",
+      "Discoverability and performance work inside software and web apps where it applies",
+      "Instagram profile and content optimisation — structure, hooks, captions, alt text",
+      "YouTube channel work: titles, thumbnails, descriptions, chapters and metadata hygiene",
+    ],
+    tailoring:
+      "We optimise what is in our control and report on it honestly. We do not guarantee rankings, views or follower counts, and we will say so plainly rather than sell an outcome no one can promise.",
+    related: [],
+  },
+  {
+    slug: "mobile-app-development",
+    index: "04",
+    title: "Mobile App Development",
+    summary:
+      "Thoughtful Android and iOS products, designed around real users and built for maintainable growth.",
     accent: "mint",
+    problem:
+      "A mobile product is needed, and the decision has already been framed as a technology question — native or cross-platform — before anyone has agreed what the app is for or who opens it on a Tuesday morning.",
+    deliverables: [
+      "Product UX for the flows that carry the weight, designed for thumbs and interruptions",
+      "Android application design and development",
+      "iOS application design and development",
+      "Cross-platform delivery where it is genuinely the sensible technical choice",
+      "Integrations, testing and release support through to the stores",
+    ],
+    tailoring:
+      "Native or cross-platform is a consequence of what the app has to do, not a starting position. We decide it with you, in the open, and explain the trade we are making.",
+    related: ["crm", "hrm"],
+  },
+  {
+    slug: "b2b-software-solutions",
+    index: "05",
+    title: "B2B Software Solutions",
+    summary:
+      "CRM, HRM, ERP, dashboards, and internal tools shaped around the way your business actually operates.",
+    accent: "coral",
     problem:
       "Something important is held together by a spreadsheet, a chat thread and one person's memory. It works until that person is away, or until two copies of the file disagree.",
     deliverables: [
-      "A data model that matches the real process, including its exceptions",
-      "Application screens designed for people who will use them all day, at speed",
+      "CRM, HRM and ERP systems built around your existing process rather than a vendor's",
+      "Portals, dashboards and workflow tools for the people who use them all day",
+      "API and third-party integrations, with retries, idempotency and visible failure states",
       "Roles, permissions and an audit trail proportional to what the data is worth",
       "Import tooling and a parallel-running migration, so nothing is switched over blind",
     ],
@@ -95,42 +141,24 @@ export const services: Service[] = [
     related: ["crm", "hrm", "erp"],
   },
   {
-    slug: "integrations-automation-apis",
-    index: "05",
-    title: "Integrations, Automation & APIs",
-    summary:
-      "Connect the systems you already pay for, and delete the copy-and-paste step.",
-    accent: "coral",
-    problem:
-      "Data is re-entered by hand between two or three tools. Each re-entry is a chance to be wrong, and nobody is sure which system is authoritative any more.",
-    deliverables: [
-      "A written map of which system owns which fact, agreed before anything is wired together",
-      "Integrations with retries, idempotency and a visible failure state — not silent cron jobs",
-      "A typed API surface with versioning, for the systems that need to be integrated against later",
-      "Monitoring and alerting on the paths that would hurt if they stopped overnight",
-    ],
-    tailoring:
-      "Some clients need one reliable sync. Others need a documented public API. The engineering rigour is the same; the surface area is not.",
-    related: ["crm", "erp"],
-  },
-  {
-    slug: "performance-support-iteration",
+    slug: "product-strategy",
     index: "06",
-    title: "Performance, Support & Iteration",
+    title: "Product Strategy",
     summary:
-      "Keep the thing fast, current and improving after launch, without a retainer you cannot read.",
+      "From first idea to a focused roadmap, we turn business needs into a product that is sensible to build.",
     accent: "lilac",
     problem:
-      "The project shipped, then slowly degraded. Dependencies aged, images crept up in size, and small improvements never quite got scheduled.",
+      "There is a clear sense that something needs to change, and a long list of features that may or may not address it. Building the list is expensive and usually answers the wrong question.",
     deliverables: [
-      "A performance and accessibility audit against real devices, with a prioritised fix list",
-      "Dependency and security updates on a predictable cadence",
-      "Analytics and error monitoring that measure the outcomes the business cares about",
-      "A short, itemised improvement cycle — you can see what each block of time bought",
+      "Product discovery: stakeholder and user conversations, written up rather than summarised into slides",
+      "Feature definition and prioritisation, including what not to build",
+      "User flows and a map of the current process, including the parts outside any software",
+      "Scope and technical direction, with the assumptions each estimate depends on",
+      "A delivery roadmap with an explicit first release and an explicit not-yet list",
     ],
     tailoring:
-      "Anything from an occasional audit to a standing block of hours each month. No minimum term, and the backlog stays visible to the client.",
-    related: ["travel", "portfolio"],
+      "Depth scales with risk. A marketing site needs a short session; an operations platform that touches money needs weeks and a written process map.",
+    related: ["erp", "crm"],
   },
 ];
 
@@ -156,3 +184,5 @@ export const processSteps = [
     body: "We measure what happens, fix what the first version got wrong, and schedule the next thing worth doing. Nothing is abandoned at launch.",
   },
 ] as const;
+
+export type ProcessStep = (typeof processSteps)[number];

@@ -1,55 +1,107 @@
+import { BRAND } from "@/lib/brand";
 import { cn } from "@/lib/cn";
 
-type MonogramProps = {
+type BrandProps = {
   className?: string;
+  /** Supply only when the artwork is the accessible name for its context. */
   title?: string;
 };
 
 /**
- * Geometric Booklee "B". Drawn as a single even-odd path so the counters stay
- * transparent on any background, and coloured with `currentColor` so the mark
- * works on the dark hero, on paper, and inside a pastel field without variants.
+ * The Booklee Technologies mark on its own, vectorised from the supplied logo
+ * artwork. Filled with `currentColor` and even-odd, so the counters stay
+ * transparent and one path works on black, on paper and inside a pastel field.
+ *
+ * Every viewBox in `BRAND` is tight to the visible artwork — measured from the
+ * path data, not eyeballed — so centring the viewBox centres what is actually
+ * drawn. `preserveAspectRatio` is left at its default (`xMidYMid meet`), which
+ * is what keeps the artwork centred and undistorted at any height.
  */
-export function Monogram({ className, title }: MonogramProps) {
+export function Monogram({ className, title }: BrandProps) {
   return (
     <svg
-      viewBox="0 0 40 40"
+      viewBox={BRAND.markViewBox}
       role={title ? "img" : "presentation"}
       aria-hidden={title ? undefined : true}
       aria-label={title}
-      className={cn("h-6 w-6", className)}
+      className={cn("block h-6 w-auto", className)}
       fill="none"
     >
       {title ? <title>{title}</title> : null}
-      <path
-        fillRule="evenodd"
-        clipRule="evenodd"
-        d="M5 5h18.4a7 7 0 0 1 0 14h1.6a7.5 7.5 0 0 1 0 15H5V5Zm6.6 5.6v3.2h11.3a1.6 1.6 0 0 0 0-3.2H11.6Zm0 14.6v3.6h12.9a1.8 1.8 0 0 0 0-3.6H11.6Z"
-        fill="currentColor"
-      />
+      <path fillRule="evenodd" d={BRAND.markPath} fill="currentColor" />
     </svg>
   );
 }
 
-type LogoProps = {
-  className?: string;
-  /** Rendered inside a link that already carries the accessible name. */
-  decorative?: boolean;
-};
-
-export function Logo({ className, decorative = true }: LogoProps) {
+/**
+ * Mark plus BOOKLEE. The smaller TECHNOLOGIES line is dropped here because at
+ * navigation size it would render around two pixels tall and read as a smudge
+ * rather than as type. The full lockup is used wherever there is room for it.
+ */
+export function Signature({ className, title }: BrandProps) {
   return (
-    <span className={cn("inline-flex items-center gap-2.5", className)}>
-      <Monogram
-        className="h-[1.15em] w-[1.15em]"
-        title={decorative ? undefined : "Booklee"}
-      />
-      <span
-        className="font-[family-name:var(--font-display)] text-[1.35em] leading-none font-semibold tracking-[-0.01em] uppercase"
-        style={{ fontFeatureSettings: '"ss01"' }}
-      >
-        Booklee
-      </span>
+    <svg
+      viewBox={BRAND.signatureViewBox}
+      role={title ? "img" : "presentation"}
+      aria-hidden={title ? undefined : true}
+      aria-label={title}
+      className={cn("block h-6 w-auto", className)}
+      fill="none"
+    >
+      {title ? <title>{title}</title> : null}
+      <path fillRule="evenodd" d={BRAND.lockupMarkPath} fill="currentColor" />
+      <path fillRule="evenodd" d={BRAND.lockupWordPath} fill="currentColor" />
+    </svg>
+  );
+}
+
+/**
+ * The complete lockup. The three paths stay separate because the About section
+ * animates the mark, the wordmark and the technologies line independently.
+ */
+export function Lockup({
+  className,
+  title,
+  markId,
+  wordId,
+  tagId,
+}: BrandProps & { markId?: string; wordId?: string; tagId?: string }) {
+  return (
+    <svg
+      viewBox={BRAND.lockupViewBox}
+      role={title ? "img" : "presentation"}
+      aria-hidden={title ? undefined : true}
+      aria-label={title}
+      className={cn("block h-8 w-auto", className)}
+      fill="none"
+    >
+      {title ? <title>{title}</title> : null}
+      <path id={markId} fillRule="evenodd" d={BRAND.lockupMarkPath} fill="currentColor" />
+      <path id={wordId} fillRule="evenodd" d={BRAND.lockupWordPath} fill="currentColor" />
+      <path id={tagId} fillRule="evenodd" d={BRAND.lockupTagPath} fill="currentColor" />
+    </svg>
+  );
+}
+
+/**
+ * Header and footer signature, in an explicit fixed-height alignment box.
+ *
+ * The box is `grid` rather than `inline-flex` for a specific reason. An
+ * inline-level wrapper participates in a line box, so the artwork is aligned to
+ * the *text baseline* of the inherited `line-height: 1.6` — which parks the
+ * descender space underneath it and lifts the visible mark roughly three pixels
+ * above the optical centre of the bar. That was the cause of the off-centre
+ * signature, not slack in the viewBox. A block-level grid box with
+ * `place-items: center` has no baseline to answer to, so the artwork is centred
+ * geometrically inside a slot whose height we control.
+ *
+ * The slot is `h-9`, matching the height of the navigation links and the call
+ * to action beside it, so every item in the bar occupies the same vertical band.
+ */
+export function Logo({ className }: { className?: string }) {
+  return (
+    <span className={cn("grid h-9 place-items-center", className)}>
+      <Signature className="h-[1.15rem] w-auto md:h-6" />
     </span>
   );
 }

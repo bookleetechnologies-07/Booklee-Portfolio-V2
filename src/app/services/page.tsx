@@ -2,12 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { BookingCTA } from "@/components/home/BookingCTA";
-import { Eyebrow } from "@/components/ui/Eyebrow";
+import { ProcessTiles } from "@/components/home/ProcessTiles";
 import { PageIntro } from "@/components/ui/PageIntro";
 import { Reveal } from "@/components/ui/Reveal";
 import { RevealText } from "@/components/ui/RevealText";
-import { projectBySlug } from "@/content/projects";
-import { processSteps, services } from "@/content/services";
+import { services } from "@/content/services";
+import { starterBySlug } from "@/content/starter-websites";
 
 export const metadata: Metadata = {
   title: "Services",
@@ -82,20 +82,35 @@ export default function ServicesPage() {
                 </RevealText>
                 <p className="prose-body mt-6 text-muted">{service.problem}</p>
 
+                {service.secondary ? (
+                  <Link
+                    href={service.secondary.href}
+                    className="group mt-8 inline-flex h-12 items-center gap-2 rounded-full bg-ink px-6 text-sm font-medium text-bone transition-transform duration-200 hover:-translate-y-0.5"
+                  >
+                    {service.secondary.label}
+                    <span
+                      aria-hidden="true"
+                      className="transition-transform duration-200 group-hover:translate-x-1"
+                    >
+                      &rarr;
+                    </span>
+                  </Link>
+                ) : null}
+
                 {service.related.length > 0 ? (
                   <div className="mt-8">
                     <h3 className="eyebrow text-muted">Seen in</h3>
                     <ul className="mt-3 flex flex-wrap gap-2">
                       {service.related.map((slug) => {
-                        const project = projectBySlug(slug);
-                        if (!project) return null;
+                        const starter = starterBySlug(slug);
+                        if (!starter) return null;
                         return (
                           <li key={slug}>
                             <Link
-                              href={`/projects/${slug}`}
+                              href={`/services/starter-websites/${slug}`}
                               className="meta inline-flex items-center gap-1.5 rounded-full border border-ink/15 px-3 py-1.5 transition-colors duration-200 hover:border-ink/40"
                             >
-                              {project.name}
+                              {starter.name}
                               <span aria-hidden="true">&rarr;</span>
                             </Link>
                           </li>
@@ -142,35 +157,10 @@ export default function ServicesPage() {
         ))}
       </div>
 
-      <section
-        data-nav-theme="dark"
-        aria-labelledby="services-process-heading"
-        className="on-dark grain relative bg-ink text-fog section-pad"
-      >
-        <div className="shell">
-          <Eyebrow className="text-fog">The shape of a project</Eyebrow>
-          <RevealText
-            as="h2"
-            id="services-process-heading"
-            className="display-lg mt-6 max-w-[22ch] text-bone"
-          >
-            Discovery &rarr; Design &rarr; Build &rarr; Improve
-          </RevealText>
-
-          <ol className="mt-16 grid gap-10 md:grid-cols-2 lg:grid-cols-4">
-            {processSteps.map((step) => (
-              <li key={step.index} className="flex flex-col gap-4">
-                <span className="meta text-fog/40 tabular-nums">
-                  {step.index}
-                </span>
-                <span aria-hidden="true" className="h-px w-full bg-white/15" />
-                <h3 className="display-sm text-bone">{step.title}</h3>
-                <p className="prose-body text-fog/65">{step.body}</p>
-              </li>
-            ))}
-          </ol>
-        </div>
-      </section>
+      <ProcessTiles
+        eyebrow="The shape of a project"
+        heading="Discovery, Design, Build, Improve."
+      />
 
       <BookingCTA
         heading="Not sure which of these you need?"

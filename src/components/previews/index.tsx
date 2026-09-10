@@ -1,6 +1,6 @@
 import type { ComponentType } from "react";
 
-import type { ProjectSlug } from "@/content/projects";
+import type { DeckSlug } from "@/content/deck";
 
 import { CrmPreview } from "./CrmPreview";
 import { ErpPreview } from "./ErpPreview";
@@ -9,7 +9,7 @@ import { PortfolioPreview } from "./PortfolioPreview";
 import { TravelPreview } from "./TravelPreview";
 import type { PreviewProps } from "./PreviewFrame";
 
-export const previewBySlug: Record<ProjectSlug, ComponentType<PreviewProps>> = {
+export const previewBySlug: Record<DeckSlug, ComponentType<PreviewProps>> = {
   crm: CrmPreview,
   hrm: HrmPreview,
   portfolio: PortfolioPreview,
@@ -20,7 +20,7 @@ export const previewBySlug: Record<ProjectSlug, ComponentType<PreviewProps>> = {
 export function ConceptPreview({
   slug,
   ...props
-}: PreviewProps & { slug: ProjectSlug }) {
+}: PreviewProps & { slug: DeckSlug }) {
   const Preview = previewBySlug[slug];
   return <Preview {...props} />;
 }

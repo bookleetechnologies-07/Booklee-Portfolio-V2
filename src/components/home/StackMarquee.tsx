@@ -57,7 +57,7 @@ export function StackMarquee() {
     <section
       data-nav-theme="dark"
       aria-labelledby="toolkit-heading"
-      className="on-dark grain relative overflow-hidden bg-graphite text-fog"
+      className="on-dark grain relative overflow-hidden bg-black text-fog"
     >
       <div
         aria-hidden="true"
@@ -85,17 +85,14 @@ export function StackMarquee() {
         </div>
       </div>
 
-      <div className="relative flex flex-col gap-6 pb-[clamp(2rem,3.5vw,3.5rem)] md:gap-8">
+      {/*
+        The bottom padding used to belong to a footnote below the marquee. The
+        note is gone; the padding it was carrying stays here, so the section
+        still closes on the same rhythm as every other one on the page.
+      */}
+      <div className="relative flex flex-col gap-6 pb-[clamp(3.5rem,7vw,7rem)] md:gap-8">
         <Row items={marqueeRowOne} duration="52s" />
         <Row items={marqueeRowTwo} duration="44s" reverse />
-      </div>
-
-      <div className="shell relative pb-[clamp(3.5rem,7vw,7rem)]">
-        <p className="meta max-w-[52ch] text-fog/45">
-          {/* TODO_CONTENT: confirm actual Booklee capabilities before launch. */}
-          We only list what we would be happy to be asked about in a first call.
-          If something you need is missing, it is worth asking anyway.
-        </p>
       </div>
     </section>
   );

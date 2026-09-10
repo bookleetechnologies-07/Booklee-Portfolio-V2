@@ -20,7 +20,7 @@ export function BookingCTA({
       data-nav-theme="dark"
       aria-labelledby="booking-heading"
       className={cn(
-        "on-dark grain grain-strong relative overflow-hidden bg-ink text-fog",
+        "on-dark grain grain-strong relative overflow-hidden border-t border-white/10 bg-black text-fog",
         className,
       )}
     >
@@ -57,7 +57,7 @@ export function BookingCTA({
                 </span>
               </Link>
               <Link
-                href="/projects"
+                href="/portfolio"
                 className="inline-flex h-14 items-center rounded-full border border-white/25 px-8 text-base font-medium text-bone transition-colors duration-200 hover:bg-white/10"
               >
                 See our work
